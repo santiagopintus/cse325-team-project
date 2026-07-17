@@ -85,5 +85,5 @@ The Trello board represents these core features as individual cards, each contai
 
 ## 5. Project Links
 
-* **GitHub Repository:** [https://github.com/your-username/questlog-project](https://www.google.com/search?q=https://github.com/your-username/questlog-project) *(Note: All team members have collaborator access)*
-* **Trello Board:** [https://trello.com/b/your-public-board-link](https://www.google.com/search?q=https://trello.com/b/your-public-board-link) *(Note: Set to public for instructor evaluation)*
+* **GitHub Repository:** [https://github.com/santiagopintus/cse325-team-project](https://www.google.com/search?q=https://github.com/santiagopintus/cse325-team-project)
+* **Trello Board:** [https://trello.com/invite/b/6a51c8480b9e01598b3ae777/ATTIba42180c087ec2509decd3c5069a176d6A4ADDB9/cse325-team-project](https://trello.com/invite/b/6a51c8480b9e01598b3ae777/ATTIba42180c087ec2509decd3c5069a176d6A4ADDB9/cse325-team-project)
