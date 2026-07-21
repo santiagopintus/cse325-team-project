@@ -1,0 +1,139 @@
+@page "/my-shelf"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using QuestLog.Data
+@using QuestLog.Models
+@inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthProvider
+
+<PageTitle>My Shelf</PageTitle>
+
+<h3>My Shelf</h3>
+
+<div class="btn-group mb-4" role="group" aria-label="Filter by status">
+    <button class="btn btn-sm @(statusFilter is null ? "btn-primary" : "btn-outline-primary")" @onclick="() => Filter(null)">All</button>
+    @foreach (var status in Enum.GetValues<PlayStatus>())
+    {
+        <button class="btn btn-sm @(statusFilter == status ? "btn-primary" : "btn-outline-primary")" @onclick="() => Filter(status)">@status</button>
+    }
+</div>
+
+@if (isLoading)
+{
+    <p>Loading your shelf...</p>
+}
+else if (filteredGames.Count == 0)
+{
+    <p>No games on your shelf yet@(statusFilter is null ? "" : $" with status \"{statusFilter}\"").</p>
+}
+else
+{
+    <div class="game-grid">
+        @foreach (var game in filteredGames)
+        {
+            <div class="game-card">
+                <img src="@(string.IsNullOrEmpty(game.CoverArtUrl) ? "/placeholder.png" : game.CoverArtUrl)" alt="@(game.Title) cover art" loading="lazy" />
+                <h4>@game.Title</h4>
+                <p>@game.Platform</p>
+
+                <div class="mb-2">
+                    <label for="status-@game.Id" class="form-label">Status</label>
+                    <select id="status-@game.Id" class="form-select form-select-sm" value="@game.Status" @onchange="e => UpdateStatus(game, e.Value!.ToString()!)">
+                        @foreach (var status in Enum.GetValues<PlayStatus>())
+                        {
+                            <option value="@status">@status</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-2">
+                    <label for="rating-@game.Id" class="form-label">Rating (0-5)</label>
+                    <input id="rating-@game.Id" type="number" min="0" max="5" class="form-control form-control-sm"
+                           value="@game.UserRating" @onchange="e => UpdateRating(game, e.Value!.ToString()!)" />
+                </div>
+
+                <div class="mb-2">
+                    <label for="notes-@game.Id" class="form-label">Notes</label>
+                    <textarea id="notes-@game.Id" class="form-control form-control-sm" rows="2"
+                              value="@game.Notes" @onchange="e => UpdateNotes(game, e.Value!.ToString()!)"></textarea>
+                </div>
+
+                <button class="btn btn-outline-danger btn-sm" @onclick="() => Delete(game)">Remove</button>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<UserGame> games = new();
+    private List<UserGame> filteredGames = new();
+    private PlayStatus? statusFilter;
+    private bool isLoading = true;
+    private string? userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (userId != null)
+        {
+            games = await DbContext.UserGames
+                .Where(g => g.UserId == userId)
+                .OrderByDescending(g => g.DateAdded)
+                .ToListAsync();
+        }
+
+        ApplyFilter();
+        isLoading = false;
+    }
+
+    private void Filter(PlayStatus? status)
+    {
+        statusFilter = status;
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        filteredGames = statusFilter is null
+            ? games
+            : games.Where(g => g.Status == statusFilter).ToList();
+    }
+
+    private async Task UpdateStatus(UserGame game, string value)
+    {
+        game.Status = Enum.Parse<PlayStatus>(value);
+        await SaveChange(game);
+    }
+
+    private async Task UpdateRating(UserGame game, string value)
+    {
+        if (int.TryParse(value, out var rating))
+        {
+            game.UserRating = Math.Clamp(rating, 0, 5);
+            await SaveChange(game);
+        }
+    }
+
+    private async Task UpdateNotes(UserGame game, string value)
+    {
+        game.Notes = value;
+        await SaveChange(game);
+    }
+
+    private async Task SaveChange(UserGame game)
+    {
+        game.DateUpdated = DateTime.UtcNow;
+        await DbContext.SaveChangesAsync();
+    }
+
+    private async Task Delete(UserGame game)
+    {
+        DbContext.UserGames.Remove(game);
+        await DbContext.SaveChangesAsync();
+        games.Remove(game);
+        ApplyFilter();
+    }
+}
