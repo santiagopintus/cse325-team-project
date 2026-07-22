@@ -1,0 +1,63 @@
+@implements IDisposable
+@inject NavigationManager Nav
+
+<nav class="navbar">
+    <div class="navbar-inner">
+        <a class="navbar-logo" href="">Questlog</a>
+
+        <div class="navbar-search">
+            <span class="navbar-search-icon" aria-hidden="true">⌕</span>
+            <input class="navbar-search-input" placeholder="Search games..." aria-label="Search games"
+                   @bind="query" @bind:event="oninput" @onkeyup="HandleKeyUp" />
+        </div>
+
+        <div class="navbar-links">
+            <NavLink class="navbar-link" href="" Match="NavLinkMatch.All">Explore</NavLink>
+            <NavLink class="navbar-link" href="my-shelf">My Shelf</NavLink>
+
+            <AuthorizeView>
+                <Authorized>
+                    <NavLink class="navbar-link navbar-link-muted" href="Account/Manage">@context.User.Identity?.Name</NavLink>
+                    <form action="Account/Logout" method="post">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                        <button type="submit" class="navbar-link navbar-link-muted navbar-link-button">Logout</button>
+                    </form>
+                </Authorized>
+                <NotAuthorized>
+                    <NavLink class="navbar-link navbar-link-muted" href="Account/Login">Log in</NavLink>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+</nav>
+
+@code {
+    private string query = string.Empty;
+    private string? currentUrl;
+
+    protected override void OnInitialized()
+    {
+        currentUrl = Nav.ToBaseRelativePath(Nav.Uri);
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = Nav.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    private void HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(query))
+        {
+            Nav.NavigateTo($"/?q={Uri.EscapeDataString(query)}");
+        }
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+}
