@@ -12,10 +12,6 @@
 
 <h3>Explore Games</h3>
 
-<div class="search-box mb-4">
-    <input @bind="searchQuery" @bind:event="oninput" @onkeyup="HandleKeyUp" class="form-control" placeholder="Search games..." aria-label="Search games" />
-</div>
-
 @if (isSearching)
 {
     <p>Searching...</p>
@@ -25,10 +21,9 @@ else if (games.Count > 0)
     <div class="game-grid">
         @foreach (var game in games)
         {
-            <div class="game-card">
-                <img src="@(string.IsNullOrEmpty(game.Background_Image) ? "/placeholder.png" : game.Background_Image)" alt="@(game.Name) cover art" loading="lazy" />
-                <h4>@game.Name</h4>
-                <p>@string.Join(", ", game.Platforms.Select(p => p.Platform.Name))</p>
+            <GameCard Title="@game.Name"
+                      ImageUrl="@game.Background_Image"
+                      Platform="@string.Join(", ", game.Platforms.Select(p => p.Platform.Name))">
                 <AuthorizeView>
                     <Authorized>
                         @if (addedRawgIds.Contains(game.Id))
@@ -44,7 +39,7 @@ else if (games.Count > 0)
                         <a href="Account/Login" class="btn btn-outline-secondary btn-sm">Log in to Add</a>
                     </NotAuthorized>
                 </AuthorizeView>
-            </div>
+            </GameCard>
         }
     </div>
 }
@@ -54,7 +49,11 @@ else if (hasSearched)
 }
 
 @code {
+    [SupplyParameterFromQuery(Name = "q")]
+    public string? QueryParam { get; set; }
+
     private string searchQuery = "";
+    private string? lastQuery;
     private List<RawgGameDto> games = new();
     private HashSet<int> addedRawgIds = new();
     private bool isSearching;
@@ -65,6 +64,16 @@ else if (hasSearched)
     {
         var authState = await AuthProvider.GetAuthenticationStateAsync();
         userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(QueryParam) && QueryParam != lastQuery)
+        {
+            lastQuery = QueryParam;
+            searchQuery = QueryParam;
+            await Search();
+        }
     }
 
     private async Task Search()
@@ -82,11 +91,6 @@ else if (hasSearched)
                 .Select(g => g.RawgId)
                 .ToHashSet();
         }
-    }
-
-    private async Task HandleKeyUp(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter") await Search();
     }
 
     private async Task AddToShelf(RawgGameDto rawgGame)

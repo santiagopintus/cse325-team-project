@@ -32,11 +32,10 @@ else
     <div class="game-grid">
         @foreach (var game in filteredGames)
         {
-            <div class="game-card">
-                <img src="@(string.IsNullOrEmpty(game.CoverArtUrl) ? "/placeholder.png" : game.CoverArtUrl)" alt="@(game.Title) cover art" loading="lazy" />
-                <h4>@game.Title</h4>
-                <p>@game.Platform</p>
-
+            <GameCard Title="@game.Title"
+                      ImageUrl="@game.CoverArtUrl"
+                      Platform="@game.Platform"
+                      Score="@(game.UserRating > 0 ? $"{game.UserRating}/5" : null)">
                 <div class="mb-2">
                     <label for="status-@game.Id" class="form-label">Status</label>
                     <select id="status-@game.Id" class="form-select form-select-sm" value="@game.Status" @onchange="e => UpdateStatus(game, e.Value!.ToString()!)">
@@ -60,7 +59,7 @@ else
                 </div>
 
                 <button class="btn btn-outline-danger btn-sm" @onclick="() => Delete(game)">Remove</button>
-            </div>
+            </GameCard>
         }
     </div>
 }

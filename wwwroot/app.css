@@ -1,46 +1,106 @@
+:root {
+    --font-body: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-display: 'Bayon', 'Inter', sans-serif;
+
+    --color-bg: #0b0b0c;
+    --color-surface: #1b1b1d;
+    --color-border: #2d2d30;
+    --color-border-strong: #3f3f42;
+    --color-text: #ffffff;
+    --color-text-muted: #a1a1aa;
+    --color-accent: #10b981;
+    --color-accent-hover: #0ea472;
+    --color-danger: #e50000;
+}
+
 html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: var(--font-body);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--color-text);
 }
 
 .game-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 1.25rem;
-}
-
-.game-card {
-    border: 1px solid #dee2e6;
-    border-radius: 0.5rem;
-    padding: 0.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-}
-
-.game-card img {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    object-fit: cover;
-    border-radius: 0.25rem;
-}
-
-.game-card h4 {
-    font-size: 1.05rem;
-    margin: 0;
+    gap: 1.5rem;
 }
 
 a, .btn-link {
-    color: #006bb7;
+    color: var(--color-accent);
 }
 
 .btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+    color: var(--color-bg);
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+    font-weight: 600;
+}
+
+    .btn-primary:hover, .btn-primary:focus {
+        color: var(--color-bg);
+        background-color: var(--color-accent-hover);
+        border-color: var(--color-accent-hover);
+    }
+
+.btn-secondary {
+    background-color: var(--color-border);
+    border-color: var(--color-border);
+    color: var(--color-text-muted);
+}
+
+.btn-outline-primary {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+}
+
+    .btn-outline-primary:hover {
+        background-color: var(--color-accent);
+        border-color: var(--color-accent);
+        color: var(--color-bg);
+    }
+
+.btn-outline-secondary {
+    color: var(--color-text-muted);
+    border-color: var(--color-border-strong);
+}
+
+    .btn-outline-secondary:hover {
+        background-color: var(--color-border);
+        border-color: var(--color-border-strong);
+        color: var(--color-text);
+    }
+
+.btn-outline-danger:hover {
+    color: var(--color-bg);
+}
+
+.form-control, .form-select {
+    background-color: var(--color-surface);
+    border-color: var(--color-border);
+    color: var(--color-text);
+}
+
+    .form-control::placeholder {
+        color: var(--color-text-muted);
+    }
+
+    .form-control:focus, .form-select:focus {
+        background-color: var(--color-surface);
+        color: var(--color-text);
+        border-color: var(--color-accent);
+        box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.25);
+    }
+
+.form-label {
+    color: var(--color-text-muted);
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+  box-shadow: 0 0 0 0.1rem var(--color-bg), 0 0 0 0.25rem var(--color-accent);
 }
 
 .content {
@@ -52,15 +112,15 @@ h1:focus {
 }
 
 .valid.modified:not([type=checkbox]) {
-    outline: 1px solid #26b050;
+    outline: 1px solid var(--color-accent);
 }
 
 .invalid {
-    outline: 1px solid #e50000;
+    outline: 1px solid var(--color-danger);
 }
 
 .validation-message {
-    color: #e50000;
+    color: #ff8080;
 }
 
 .blazor-error-boundary {
