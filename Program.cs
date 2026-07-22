@@ -30,11 +30,13 @@ builder.Services
 var connectionString =
     builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddDbContext<ApplicationDbContext>(
-    options =>
-        // TODO: swap to options.UseNpgsql(connectionString) once a Postgres (Neon/Supabase) connection string is set in user-secrets.
-        options.UseSqlite(connectionString)
-);
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
+    if (builder.Environment.IsDevelopment())
+        options.UseSqlite(connectionString);
+    else
+        options.UseNpgsql(connectionString);
+});
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddHttpClient<RawgApiService>();

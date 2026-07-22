@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: questlog-app
+  AZURE_WEBAPP_NAME: questlog
   DOTNET_VERSION: '9.0.x'
 
 permissions:

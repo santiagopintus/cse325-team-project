@@ -39,6 +39,9 @@ ScaffoldingReadMe.txt
 # dotenv environment variables file
 .env
 
+# Azure publish profile (contains deployment credentials)
+*.PublishSettings
+
 # Local SQLite dev database
 Data/app.db
 
