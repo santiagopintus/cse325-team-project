@@ -7,6 +7,7 @@
 @inject ApplicationDbContext DbContext
 @inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager Nav
+@inject ToastService Toast
 
 <PageTitle>Explore Games</PageTitle>
 
@@ -43,7 +44,7 @@ else if (games.Count > 0)
         }
     </div>
 }
-else if (hasSearched)
+else if (hasSearched && !searchFailed)
 {
     <p>No games found for "@searchQuery".</p>
 }
@@ -58,12 +59,18 @@ else if (hasSearched)
     private HashSet<int> addedRawgIds = new();
     private bool isSearching;
     private bool hasSearched;
+    private bool searchFailed;
     private string? userId;
 
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthProvider.GetAuthenticationStateAsync();
         userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrWhiteSpace(QueryParam))
+        {
+            await LoadDefaultGames();
+        }
     }
 
     protected override async Task OnParametersSetAsync()
@@ -76,14 +83,34 @@ else if (hasSearched)
         }
     }
 
+    private async Task LoadDefaultGames() =>
+        await FetchGames(() => RawgApi.GetPopularGamesAsync(), "Couldn't load games right now. Please try again.");
+
     private async Task Search()
     {
-        isSearching = true;
-        games = await RawgApi.SearchGamesAsync(searchQuery);
+        await FetchGames(() => RawgApi.SearchGamesAsync(searchQuery), "Couldn't search games right now. Please try again.");
         hasSearched = true;
+    }
+
+    private async Task FetchGames(Func<Task<List<RawgGameDto>>> fetch, string errorMessage)
+    {
+        isSearching = true;
+        searchFailed = false;
+
+        try
+        {
+            games = await fetch();
+        }
+        catch (Exception)
+        {
+            games = new();
+            searchFailed = true;
+            Toast.Show(errorMessage, ToastLevel.Error);
+        }
+
         isSearching = false;
 
-        if (userId != null)
+        if (!searchFailed && userId != null && games.Count > 0)
         {
             var rawgIds = games.Select(g => g.Id).ToList();
             addedRawgIds = DbContext.UserGames
@@ -113,8 +140,15 @@ else if (hasSearched)
             Status = PlayStatus.Backlog
         };
 
-        DbContext.UserGames.Add(newUserGame);
-        await DbContext.SaveChangesAsync();
-        addedRawgIds.Add(rawgGame.Id);
+        try
+        {
+            DbContext.UserGames.Add(newUserGame);
+            await DbContext.SaveChangesAsync();
+            addedRawgIds.Add(rawgGame.Id);
+        }
+        catch (Exception)
+        {
+            Toast.Show("Couldn't add that game to your shelf. Please try again.", ToastLevel.Error);
+        }
     }
 }

@@ -6,6 +6,7 @@
 @using QuestLog.Models
 @inject ApplicationDbContext DbContext
 @inject AuthenticationStateProvider AuthProvider
+@inject ToastService Toast
 
 <PageTitle>My Shelf</PageTitle>
 
@@ -125,14 +126,28 @@ else
     private async Task SaveChange(UserGame game)
     {
         game.DateUpdated = DateTime.UtcNow;
-        await DbContext.SaveChangesAsync();
+        try
+        {
+            await DbContext.SaveChangesAsync();
+        }
+        catch (Exception)
+        {
+            Toast.Show("Couldn't save your changes. Please try again.", ToastLevel.Error);
+        }
     }
 
     private async Task Delete(UserGame game)
     {
-        DbContext.UserGames.Remove(game);
-        await DbContext.SaveChangesAsync();
-        games.Remove(game);
-        ApplyFilter();
+        try
+        {
+            DbContext.UserGames.Remove(game);
+            await DbContext.SaveChangesAsync();
+            games.Remove(game);
+            ApplyFilter();
+        }
+        catch (Exception)
+        {
+            Toast.Show("Couldn't remove that game. Please try again.", ToastLevel.Error);
+        }
     }
 }

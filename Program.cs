@@ -5,6 +5,7 @@ using QuestLog.Components;
 using QuestLog.Components.Account;
 using QuestLog.Data;
 using QuestLog.Services.Rawg;
+using QuestLog.Services.Toasts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,13 +31,7 @@ builder.Services
 var connectionString =
     builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-{
-    if (builder.Environment.IsDevelopment())
-        options.UseSqlite(connectionString);
-    else
-        options.UseNpgsql(connectionString);
-});
+builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddHttpClient<RawgApiService>();
@@ -49,7 +44,15 @@ builder.Services
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
+builder.Services.AddScoped<ToastService>();
+
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    db.Database.Migrate();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
