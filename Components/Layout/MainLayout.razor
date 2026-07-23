@@ -4,12 +4,40 @@
     <NavBar />
 
     <main class="content px-4">
-        @Body
+        <ErrorBoundary @ref="errorBoundary">
+            <ChildContent>
+                @Body
+            </ChildContent>
+            <ErrorContent>
+                <div class="page-error">
+                    <h3>Something went wrong</h3>
+                    <p>This part of the page hit a snag. Try again, or head back to the homepage.</p>
+                    <div class="page-error-actions">
+                        <button class="btn btn-primary btn-sm" @onclick="Reset">Try again</button>
+                        <a class="btn btn-outline-secondary btn-sm" href="/">Go home</a>
+                    </div>
+                </div>
+            </ErrorContent>
+        </ErrorBoundary>
     </main>
+
+    <Footer />
+
+    <ToastContainer />
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
+    We lost connection to the server. <a href="." class="reload">Reload the page</a> to continue.
+    <span class="dismiss">&#10005;</span>
 </div>
+
+@code {
+    private ErrorBoundary? errorBoundary;
+
+    protected override void OnParametersSet()
+    {
+        errorBoundary?.Recover();
+    }
+
+    private void Reset() => errorBoundary?.Recover();
+}
