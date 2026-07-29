@@ -51,7 +51,15 @@
 }
 
 .game-card-content {
+    flex: 1;
     padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.game-card-info {
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -74,7 +82,6 @@
 }
 
 .game-card-actions {
-    margin-top: 8px;
     display: flex;
     flex-direction: column;
     gap: 8px;

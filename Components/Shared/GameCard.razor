@@ -14,11 +14,13 @@
     </div>
 
     <div class="game-card-content">
-        <h4 class="game-card-title">@Title</h4>
-        @if (!string.IsNullOrWhiteSpace(Platform))
-        {
-            <p class="game-card-platform">@Platform</p>
-        }
+        <div class="game-card-info">
+            <h4 class="game-card-title">@Title</h4>
+            @if (!string.IsNullOrWhiteSpace(Platform))
+            {
+                <p class="game-card-platform">@Platform</p>
+            }
+        </div>
         @if (ChildContent is not null)
         {
             <div class="game-card-actions">
