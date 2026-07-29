@@ -27,6 +27,10 @@
   margin-right: auto;
 }
 
+.navbar-logo-accent {
+  color: var(--color-accent);
+}
+
 .navbar-search {
   display: flex;
   align-items: center;
