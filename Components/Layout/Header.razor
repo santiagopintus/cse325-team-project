@@ -1,17 +1,16 @@
 @implements IDisposable
 @inject NavigationManager Nav
 
-<nav class="navbar">
-    <div class="navbar-inner">
+<header class="navbar">
+    <div class="navbar-inner container">
         <a class="navbar-logo" href="">Questlog</a>
 
         <div class="navbar-search">
             <span class="navbar-search-icon" aria-hidden="true">⌕</span>
-            <input class="navbar-search-input" placeholder="Search games..." aria-label="Search games"
-                   @bind="query" @bind:event="oninput" @onkeyup="HandleKeyUp" />
+            <input class="navbar-search-input" placeholder="Search games..." aria-label="Search games" @bind="query" @bind:event="oninput" @onkeyup="HandleKeyUp" />
         </div>
 
-        <div class="navbar-links">
+        <nav class="navbar-links">
             <NavLink class="navbar-link" href="" Match="NavLinkMatch.All">Explore</NavLink>
             <NavLink class="navbar-link" href="my-shelf">My Shelf</NavLink>
 
@@ -28,9 +27,9 @@
                     <NavLink class="navbar-link navbar-link-muted" href="Account/Login">Log in</NavLink>
                 </NotAuthorized>
             </AuthorizeView>
-        </div>
+        </nav>
     </div>
-</nav>
+</header>
 
 @code {
     private string query = string.Empty;

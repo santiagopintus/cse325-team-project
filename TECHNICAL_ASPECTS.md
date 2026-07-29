@@ -4,6 +4,9 @@ This document defines the complete technical architecture, data model, API integ
 
 ---
 
+## Trello Board: 
+https://trello.com/b/wXK7fJZf
+
 ## 1. Project Summary & Architecture
 
 QuestLog is a lightweight .NET Blazor Web App that enables users to discover games via the public **RAWG API** and save them to a permanent personal backlog called **"My Shelf"**.
