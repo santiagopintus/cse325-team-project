@@ -36,6 +36,20 @@
     color: var(--color-accent);
 }
 
+.game-card-tag {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background-color: rgba(30, 30, 33, 0.75);
+    border: 1px solid var(--color-accent);
+    border-radius: 999px;
+    padding: 4px 8px;
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--color-accent);
+}
+
 .game-card-content {
     padding: 16px;
     display: flex;

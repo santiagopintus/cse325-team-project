@@ -1,0 +1,136 @@
+@using Microsoft.EntityFrameworkCore
+@using QuestLog.Data
+@using QuestLog.Models
+@inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthProvider
+@inject ToastService Toast
+
+@if (IsOpen)
+{
+    <div class="add-game-overlay" @onclick="Close">
+        <div class="add-game-panel" @onclick:stopPropagation="true">
+            <div class="add-game-header">
+                <h4>Add a Game</h4>
+                <button type="button" class="add-game-close" @onclick="Close" aria-label="Close">&#10005;</button>
+            </div>
+
+            <div class="add-game-body">
+                <div class="add-game-preview">
+                    <GameCard Title="@(string.IsNullOrWhiteSpace(title) ? "New Game" : title)"
+                              ImageUrl="@imageUrl"
+                              Platform="@platform" />
+                </div>
+
+                <div class="add-game-fields">
+                    <div class="mb-2">
+                        <label for="new-title" class="form-label">Title</label>
+                        <input id="new-title" type="text" class="form-control form-control-sm" @bind="title" @bind:event="oninput" />
+                        @if (showValidation && string.IsNullOrWhiteSpace(title))
+                        {
+                            <div class="add-game-error">Title is required.</div>
+                        }
+                    </div>
+
+                    <div class="mb-2">
+                        <label for="new-image-url" class="form-label">Image URL</label>
+                        <input id="new-image-url" type="url" class="form-control form-control-sm" placeholder="https://..."
+                               @bind="imageUrl" @bind:event="oninput" />
+                    </div>
+
+                    <div class="mb-2">
+                        <label for="new-platform" class="form-label">Platform</label>
+                        <input id="new-platform" type="text" class="form-control form-control-sm" @bind="platform" @bind:event="oninput" />
+                    </div>
+
+                    <UserGameStatusFields IdPrefix="new"
+                                          Status="status" StatusChanged="s => status = s"
+                                          Rating="rating" RatingChanged="r => rating = r"
+                                          Notes="@notes" NotesChanged="n => notes = n" />
+                </div>
+            </div>
+
+            <div class="add-game-footer">
+                <button class="btn btn-outline-secondary btn-sm" @onclick="Close">Cancel</button>
+                <button class="btn btn-primary btn-sm" @onclick="Save">Save Game</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsOpenChanged { get; set; }
+
+    [Parameter]
+    public EventCallback OnGameAdded { get; set; }
+
+    private string title = string.Empty;
+    private string imageUrl = string.Empty;
+    private string platform = string.Empty;
+    private PlayStatus status = PlayStatus.Backlog;
+    private int rating = 0;
+    private string notes = string.Empty;
+    private bool showValidation = false;
+
+    private async Task Close()
+    {
+        ResetForm();
+        await IsOpenChanged.InvokeAsync(false);
+    }
+
+    private void ResetForm()
+    {
+        title = string.Empty;
+        imageUrl = string.Empty;
+        platform = string.Empty;
+        status = PlayStatus.Backlog;
+        rating = 0;
+        notes = string.Empty;
+        showValidation = false;
+    }
+
+    private async Task Save()
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            showValidation = true;
+            return;
+        }
+
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (userId is null)
+        {
+            return;
+        }
+
+        var newUserGame = new UserGame
+        {
+            UserId = userId,
+            RawgId = 0,
+            Title = title.Trim(),
+            CoverArtUrl = imageUrl.Trim(),
+            Platform = platform.Trim(),
+            Status = status,
+            UserRating = rating,
+            Notes = notes
+        };
+
+        try
+        {
+            DbContext.UserGames.Add(newUserGame);
+            await DbContext.SaveChangesAsync();
+            ResetForm();
+            await IsOpenChanged.InvokeAsync(false);
+            await OnGameAdded.InvokeAsync();
+        }
+        catch (Exception)
+        {
+            Toast.Show("Couldn't add that game. Please try again.", ToastLevel.Error);
+        }
+    }
+}

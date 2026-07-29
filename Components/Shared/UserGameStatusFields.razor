@@ -1,0 +1,61 @@
+@using QuestLog.Models
+
+<div class="mb-2">
+    <label for="status-@IdPrefix" class="form-label">Status</label>
+    <select id="status-@IdPrefix" class="form-select form-select-sm" value="@Status" @onchange="HandleStatusChange">
+        @foreach (var status in Enum.GetValues<PlayStatus>())
+        {
+            <option value="@status">@status</option>
+        }
+    </select>
+</div>
+
+<div class="mb-2">
+    <label for="rating-@IdPrefix" class="form-label">Rating (0-5)</label>
+    <input id="rating-@IdPrefix" type="number" min="0" max="5" class="form-control form-control-sm"
+           value="@Rating" @onchange="HandleRatingChange" />
+</div>
+
+<div class="mb-2">
+    <label for="notes-@IdPrefix" class="form-label">Notes</label>
+    <textarea id="notes-@IdPrefix" class="form-control form-control-sm" rows="2"
+              value="@Notes" @onchange="HandleNotesChange"></textarea>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string IdPrefix { get; set; } = string.Empty;
+
+    [Parameter]
+    public PlayStatus Status { get; set; }
+
+    [Parameter]
+    public EventCallback<PlayStatus> StatusChanged { get; set; }
+
+    [Parameter]
+    public int Rating { get; set; }
+
+    [Parameter]
+    public EventCallback<int> RatingChanged { get; set; }
+
+    [Parameter]
+    public string Notes { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> NotesChanged { get; set; }
+
+    private Task HandleStatusChange(ChangeEventArgs e)
+        => StatusChanged.InvokeAsync(Enum.Parse<PlayStatus>(e.Value!.ToString()!));
+
+    private Task HandleRatingChange(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value!.ToString(), out var rating))
+        {
+            return RatingChanged.InvokeAsync(Math.Clamp(rating, 0, 5));
+        }
+        return Task.CompletedTask;
+    }
+
+    private Task HandleNotesChange(ChangeEventArgs e)
+        => NotesChanged.InvokeAsync(e.Value!.ToString());
+}

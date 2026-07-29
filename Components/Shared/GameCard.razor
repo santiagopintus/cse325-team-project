@@ -1,5 +1,9 @@
 <div class="game-card">
     <div class="game-card-image" style="@(!string.IsNullOrWhiteSpace(ImageUrl) ? $"background-image: url('{ImageUrl}')" : null)" role="img" aria-label="@($"{Title} cover art")">
+        @if (!string.IsNullOrWhiteSpace(Tag))
+        {
+            <div class="game-card-tag">@Tag</div>
+        }
         @if (!string.IsNullOrWhiteSpace(Score))
         {
             <div class="game-card-badge">
@@ -36,6 +40,9 @@
 
     [Parameter]
     public string? Score { get; set; }
+
+    [Parameter]
+    public string? Tag { get; set; }
 
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
