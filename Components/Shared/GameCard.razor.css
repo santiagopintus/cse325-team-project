@@ -8,16 +8,13 @@
 
 .game-card-image {
     position: relative;
-    aspect-ratio: 16 / 9;
-    background: linear-gradient(180deg, #47474a 0%, #171719 100%);
+    height: 180px;
+    background-color: #171719;
+    background-image: linear-gradient(180deg, #47474a 0%, #171719 100%);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 }
-
-    .game-card-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
 
 .game-card-badge {
     position: absolute;

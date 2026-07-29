@@ -1,9 +1,5 @@
 <div class="game-card">
-    <div class="game-card-image">
-        @if (!string.IsNullOrWhiteSpace(ImageUrl))
-        {
-            <img src="@ImageUrl" alt="@Title cover art" loading="lazy" />
-        }
+    <div class="game-card-image" style="@(!string.IsNullOrWhiteSpace(ImageUrl) ? $"background-image: url('{ImageUrl}')" : null)" role="img" aria-label="@($"{Title} cover art")">
         @if (!string.IsNullOrWhiteSpace(Score))
         {
             <div class="game-card-badge">
