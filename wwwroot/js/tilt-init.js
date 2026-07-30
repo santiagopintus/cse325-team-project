@@ -30,8 +30,8 @@ window.questLogTilt = {
 
     VanillaTilt.init(document.querySelectorAll("[data-tilt]"), {
       max: 8,
-      speed: 400,
-      scale: 1.06,
+      speed: 500,
+      scale: 1.03,
       glare: true,
       "max-glare": 0.2,
     });
