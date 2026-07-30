@@ -29,7 +29,7 @@ else if (games.Count > 0)
                     <Authorized>
                         @if (addedRawgIds.Contains(game.Id))
                         {
-                            <button class="btn btn-secondary btn-sm" disabled>Added</button>
+                            <button class="btn btn-sm btn-view-shelf" @onclick='() => Nav.NavigateTo($"/my-shelf#game-{game.Id}")'>View in My Shelf</button>
                         }
                         else
                         {
