@@ -123,3 +123,19 @@
 .navbar-links ::deep .navbar-link-button {
   font: inherit;
 }
+
+.navbar-links ::deep .navbar-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 41px;
+  height: 41px;
+  border-radius: 50%;
+  background-color: var(--color-accent);
+  color: #000;
+}
+
+.navbar-links ::deep .navbar-avatar:hover {
+  background-color: var(--color-accent-hover);
+}

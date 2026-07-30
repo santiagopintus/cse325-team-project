@@ -1,0 +1,14 @@
+.nav-item form {
+  margin: 0;
+}
+
+.nav-item button.nav-link {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0.5rem 1rem;
+  font: inherit;
+  cursor: pointer;
+}
