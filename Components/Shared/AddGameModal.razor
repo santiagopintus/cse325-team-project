@@ -4,6 +4,7 @@
 @inject ApplicationDbContext DbContext
 @inject AuthenticationStateProvider AuthProvider
 @inject ToastService Toast
+@inject ILogger<AddGameModal> Logger
 
 @if (IsOpen)
 {
@@ -108,28 +109,36 @@
             return;
         }
 
-        var newUserGame = new UserGame
-        {
-            UserId = userId,
-            RawgId = 0,
-            Title = title.Trim(),
-            CoverArtUrl = imageUrl.Trim(),
-            Platform = platform.Trim(),
-            Status = status,
-            UserRating = rating,
-            Notes = notes
-        };
-
         try
         {
+            var lowestExistingRawgId = await DbContext.UserGames
+                .Where(g => g.UserId == userId && g.RawgId <= 0)
+                .MinAsync(g => (int?)g.RawgId);
+
+            var nextManualRawgId = (lowestExistingRawgId ?? 1) - 1;
+
+            var newUserGame = new UserGame
+            {
+                UserId = userId,
+                RawgId = nextManualRawgId,
+                Title = title.Trim(),
+                CoverArtUrl = imageUrl.Trim(),
+                Platform = platform.Trim(),
+                Status = status,
+                UserRating = rating,
+                Notes = notes
+            };
+
             DbContext.UserGames.Add(newUserGame);
             await DbContext.SaveChangesAsync();
             ResetForm();
             await IsOpenChanged.InvokeAsync(false);
             await OnGameAdded.InvokeAsync();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            DbContext.ChangeTracker.Clear();
+            Logger.LogError(ex, "Failed to add manually-created game for user {UserId}", userId);
             Toast.Show("Couldn't add that game. Please try again.", ToastLevel.Error);
         }
     }
