@@ -8,6 +8,7 @@
 @inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager Nav
 @inject ToastService Toast
+@inject IJSRuntime JS
 
 <PageTitle>Explore Games</PageTitle>
 
@@ -24,7 +25,8 @@ else if (games.Count > 0)
         {
             <GameCard Title="@game.Name"
                       ImageUrl="@game.Background_Image"
-                      Platform="@string.Join(", ", game.Platforms.Select(p => p.Platform.Name))">
+                      Platform="@string.Join(", ", game.Platforms.Select(p => p.Platform.Name))"
+                      EnableTilt="true">
                 <AuthorizeView>
                     <Authorized>
                         @if (addedRawgIds.Contains(game.Id))
@@ -83,6 +85,11 @@ else if (hasSearched && !searchFailed)
         {
             await LoadDefaultGames();
         }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("questLogTilt.init");
     }
 
     protected override async Task OnParametersSetAsync()
