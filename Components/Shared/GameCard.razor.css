@@ -1,10 +1,10 @@
 .game-card {
-  position: relative;
   background-color: var(--color-surface);
   border-radius: 16px;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
+  transform: perspective(1000px);
+  transform-style: preserve-3d;
 }
 
 .game-card:hover {
@@ -17,6 +17,8 @@
 .game-card-image {
   position: relative;
   height: 180px;
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
   background-color: #171719;
   background-image: linear-gradient(180deg, #47474a 0%, #171719 100%);
   background-size: cover;
@@ -65,6 +67,7 @@
   flex-direction: column;
   justify-content: space-between;
   gap: 8px;
+  transform-style: preserve-3d;
 }
 
 .game-card-info {
@@ -93,4 +96,5 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transform: translateZ(30px);
 }
