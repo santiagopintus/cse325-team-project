@@ -36,18 +36,20 @@ else
     <div class="game-grid">
         @foreach (var game in filteredGames)
         {
-            <GameCard Title="@game.Title"
-                      ImageUrl="@game.CoverArtUrl"
-                      Platform="@game.Platform"
-                      Score="@(game.UserRating > 0 ? $"{game.UserRating}/5" : null)"
-                      Tag="@(game.RawgId == 0 ? "Manually Added" : null)">
-                <UserGameStatusFields IdPrefix="@game.Id.ToString()"
-                                      Status="game.Status" StatusChanged="s => UpdateStatus(game, s)"
-                                      Rating="game.UserRating" RatingChanged="r => UpdateRating(game, r)"
-                                      Notes="@game.Notes" NotesChanged="n => UpdateNotes(game, n)" />
+            <div id="game-@game.RawgId" class="game-card-anchor">
+                <GameCard Title="@game.Title"
+                          ImageUrl="@game.CoverArtUrl"
+                          Platform="@game.Platform"
+                          Score="@(game.UserRating > 0 ? $"{game.UserRating}/5" : null)"
+                          Tag="@(game.RawgId == 0 ? "Manually Added" : null)">
+                    <UserGameStatusFields IdPrefix="@game.Id.ToString()"
+                                          Status="game.Status" StatusChanged="s => UpdateStatus(game, s)"
+                                          Rating="game.UserRating" RatingChanged="r => UpdateRating(game, r)"
+                                          Notes="@game.Notes" NotesChanged="n => UpdateNotes(game, n)" />
 
-                <button class="btn btn-outline-danger btn-sm" @onclick="() => Delete(game)">Remove</button>
-            </GameCard>
+                    <button class="btn btn-outline-danger btn-sm" @onclick="() => Delete(game)">Remove</button>
+                </GameCard>
+            </div>
         }
     </div>
 }
