@@ -3,6 +3,13 @@ namespace QuestLog.Services.Rawg;
 public class RawgResponse
 {
     public List<RawgGameDto> Results { get; set; } = new();
+    public string? Next { get; set; }
+}
+
+public class RawgPagedResult
+{
+    public List<RawgGameDto> Games { get; set; } = new();
+    public bool HasMore { get; set; }
 }
 
 public class RawgGameDto

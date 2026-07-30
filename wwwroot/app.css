@@ -89,6 +89,31 @@ a,
   color: #fff;
 }
 
+.see-more-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.btn-see-more {
+  color: var(--color-bg);
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-see-more:hover,
+.btn-see-more:focus {
+  color: var(--color-bg);
+  background-color: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
 .btn-outline-primary {
   color: var(--color-accent);
   border-color: var(--color-accent);

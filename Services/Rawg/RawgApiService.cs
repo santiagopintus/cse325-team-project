@@ -15,39 +15,45 @@ public class RawgApiService
         _logger = logger;
     }
 
-    public async Task<List<RawgGameDto>> SearchGamesAsync(string query)
+    public async Task<RawgPagedResult> SearchGamesAsync(string query, int page = 1, int pageSize = 20)
     {
         if (string.IsNullOrWhiteSpace(query)) return new();
 
-        var url = $"https://api.rawg.io/api/games?key={_apiKey}&search={Uri.EscapeDataString(query)}&page_size=20";
-        var games = await FetchAsync(url);
+        var url = $"https://api.rawg.io/api/games?key={_apiKey}&search={Uri.EscapeDataString(query)}&page={page}&page_size={pageSize}";
+        var result = await FetchAsync(url);
 
         _logger.LogInformation(
-            "RAWG search for \"{Query}\" returned {Count} games: {Titles}",
+            "RAWG search for \"{Query}\" (page {Page}) returned {Count} games: {Titles}",
             query,
-            games.Count,
-            string.Join(", ", games.Take(5).Select(g => g.Name)));
+            page,
+            result.Games.Count,
+            string.Join(", ", result.Games.Take(5).Select(g => g.Name)));
 
-        return games;
+        return result;
     }
 
     // "-added" orders by how many users have added the game on RAWG, i.e. its most popular titles.
-    public async Task<List<RawgGameDto>> GetPopularGamesAsync(int pageSize = 20)
+    public async Task<RawgPagedResult> GetPopularGamesAsync(int page = 1, int pageSize = 20)
     {
-        var url = $"https://api.rawg.io/api/games?key={_apiKey}&ordering=-added&page_size={pageSize}";
-        var games = await FetchAsync(url);
+        var url = $"https://api.rawg.io/api/games?key={_apiKey}&ordering=-added&page={page}&page_size={pageSize}";
+        var result = await FetchAsync(url);
 
         _logger.LogInformation(
-            "RAWG popular games fetch returned {Count} games: {Titles}",
-            games.Count,
-            string.Join(", ", games.Take(5).Select(g => g.Name)));
+            "RAWG popular games fetch (page {Page}) returned {Count} games: {Titles}",
+            page,
+            result.Games.Count,
+            string.Join(", ", result.Games.Take(5).Select(g => g.Name)));
 
-        return games;
+        return result;
     }
 
-    private async Task<List<RawgGameDto>> FetchAsync(string url)
+    private async Task<RawgPagedResult> FetchAsync(string url)
     {
         var response = await _httpClient.GetFromJsonAsync<RawgResponse>(url);
-        return response?.Results ?? new();
+        return new RawgPagedResult
+        {
+            Games = response?.Results ?? new(),
+            HasMore = !string.IsNullOrEmpty(response?.Next)
+        };
     }
 }

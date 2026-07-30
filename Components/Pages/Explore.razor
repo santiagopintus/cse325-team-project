@@ -43,6 +43,15 @@ else if (games.Count > 0)
             </GameCard>
         }
     </div>
+
+    @if (hasMore)
+    {
+        <div class="see-more-wrapper">
+            <button class="btn btn-see-more" disabled="@isLoadingMore" @onclick="LoadMoreGames">
+                @(isLoadingMore ? "Loading..." : "See more") <span aria-hidden="true">&darr;</span>
+            </button>
+        </div>
+    }
 }
 else if (hasSearched && !searchFailed)
 {
@@ -61,6 +70,9 @@ else if (hasSearched && !searchFailed)
     private bool hasSearched;
     private bool searchFailed;
     private string? userId;
+    private int currentPage = 1;
+    private bool hasMore;
+    private bool isLoadingMore;
 
     protected override async Task OnInitializedAsync()
     {
@@ -83,41 +95,76 @@ else if (hasSearched && !searchFailed)
         }
     }
 
-    private async Task LoadDefaultGames() =>
-        await FetchGames(() => RawgApi.GetPopularGamesAsync(), "Couldn't load games right now. Please try again.");
+    private Func<int, Task<RawgPagedResult>> currentFetcher = null!;
+
+    private async Task LoadDefaultGames()
+    {
+        currentFetcher = page => RawgApi.GetPopularGamesAsync(page);
+        await FetchGames("Couldn't load games right now. Please try again.");
+    }
 
     private async Task Search()
     {
-        await FetchGames(() => RawgApi.SearchGamesAsync(searchQuery), "Couldn't search games right now. Please try again.");
+        currentFetcher = page => RawgApi.SearchGamesAsync(searchQuery, page);
+        await FetchGames("Couldn't search games right now. Please try again.");
         hasSearched = true;
     }
 
-    private async Task FetchGames(Func<Task<List<RawgGameDto>>> fetch, string errorMessage)
+    private async Task FetchGames(string errorMessage)
     {
         isSearching = true;
         searchFailed = false;
+        currentPage = 1;
 
         try
         {
-            games = await fetch();
+            var result = await currentFetcher(currentPage);
+            games = result.Games;
+            hasMore = result.HasMore;
         }
         catch (Exception)
         {
             games = new();
+            hasMore = false;
             searchFailed = true;
             Toast.Show(errorMessage, ToastLevel.Error);
         }
 
         isSearching = false;
+        SyncAddedRawgIds();
+    }
 
-        if (!searchFailed && userId != null && games.Count > 0)
+    private async Task LoadMoreGames()
+    {
+        if (isLoadingMore || !hasMore) return;
+
+        isLoadingMore = true;
+
+        try
         {
-            var rawgIds = games.Select(g => g.Id).ToList();
-            addedRawgIds = DbContext.UserGames
-                .Where(g => g.UserId == userId && rawgIds.Contains(g.RawgId))
-                .Select(g => g.RawgId)
-                .ToHashSet();
+            var result = await currentFetcher(currentPage + 1);
+            games.AddRange(result.Games);
+            hasMore = result.HasMore;
+            currentPage++;
+            SyncAddedRawgIds();
         }
+        catch (Exception)
+        {
+            Toast.Show("Couldn't load more games right now. Please try again.", ToastLevel.Error);
+        }
+
+        isLoadingMore = false;
+    }
+
+    private void SyncAddedRawgIds()
+    {
+        if (searchFailed || userId == null || games.Count == 0) return;
+
+        var rawgIds = games.Select(g => g.Id).ToList();
+        addedRawgIds = DbContext.UserGames
+            .Where(g => g.UserId == userId && rawgIds.Contains(g.RawgId))
+            .Select(g => g.RawgId)
+            .ToHashSet();
     }
 
     private async Task AddToShelf(RawgGameDto rawgGame)
