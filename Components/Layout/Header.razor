@@ -8,6 +8,9 @@
         <div class="navbar-search">
             <span class="navbar-search-icon" aria-hidden="true">⌕</span>
             <input class="navbar-search-input" placeholder="Search games..." aria-label="Search games" @bind="query" @bind:event="oninput" @onkeyup="HandleKeyUp" />
+            <button type="button" class="navbar-search-button" aria-label="Search" @onclick="Search">
+                <span aria-hidden="true">⌕</span>
+            </button>
         </div>
 
         <nav class="navbar-links">
@@ -49,7 +52,15 @@
 
     private void HandleKeyUp(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(query))
+        if (e.Key == "Enter")
+        {
+            Search();
+        }
+    }
+
+    private void Search()
+    {
+        if (!string.IsNullOrWhiteSpace(query))
         {
             Nav.NavigateTo($"/?q={Uri.EscapeDataString(query)}");
         }
