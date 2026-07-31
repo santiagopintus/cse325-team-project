@@ -9,6 +9,7 @@
 @inject NavigationManager Nav
 @inject ToastService Toast
 @inject IJSRuntime JS
+@inject ExploreGamesCache Cache
 
 <PageTitle>Explore Games</PageTitle>
 
@@ -35,7 +36,7 @@ else if (games.Count > 0)
                         }
                         else
                         {
-                            <button class="btn btn-primary btn-sm" @onclick="() => AddToShelf(game)">Add to Shelf</button>
+                            <button class="btn btn-primary btn-sm" @onclick="(MouseEventArgs e) => AddToShelf(game, e)">Add to Shelf</button>
                         }
                     </Authorized>
                     <NotAuthorized>
@@ -83,7 +84,15 @@ else if (hasSearched && !searchFailed)
 
         if (string.IsNullOrWhiteSpace(QueryParam))
         {
-            await LoadDefaultGames();
+            if (Cache.IsPopulated && Cache.Query == null)
+            {
+                currentFetcher = page => RawgApi.GetPopularGamesAsync(page);
+                RestoreFromCache();
+            }
+            else
+            {
+                await LoadDefaultGames();
+            }
         }
     }
 
@@ -98,20 +107,53 @@ else if (hasSearched && !searchFailed)
         {
             lastQuery = QueryParam;
             searchQuery = QueryParam;
-            await Search();
+
+            if (Cache.IsPopulated && Cache.Query == QueryParam)
+            {
+                currentFetcher = page => RawgApi.SearchGamesAsync(searchQuery, page);
+                RestoreFromCache();
+            }
+            else
+            {
+                await Search();
+            }
         }
     }
 
     private Func<int, Task<RawgPagedResult>> currentFetcher = null!;
+    private string? cacheKey;
+
+    private void RestoreFromCache()
+    {
+        games = Cache.Games;
+        addedRawgIds = Cache.AddedRawgIds;
+        hasMore = Cache.HasMore;
+        currentPage = Cache.CurrentPage;
+        hasSearched = Cache.HasSearched;
+        cacheKey = Cache.Query;
+    }
+
+    private void SaveToCache()
+    {
+        Cache.IsPopulated = true;
+        Cache.Query = cacheKey;
+        Cache.Games = games;
+        Cache.AddedRawgIds = addedRawgIds;
+        Cache.HasMore = hasMore;
+        Cache.CurrentPage = currentPage;
+        Cache.HasSearched = hasSearched;
+    }
 
     private async Task LoadDefaultGames()
     {
+        cacheKey = null;
         currentFetcher = page => RawgApi.GetPopularGamesAsync(page);
         await FetchGames("Couldn't load games right now. Please try again.");
     }
 
     private async Task Search()
     {
+        cacheKey = searchQuery;
         currentFetcher = page => RawgApi.SearchGamesAsync(searchQuery, page);
         await FetchGames("Couldn't search games right now. Please try again.");
         hasSearched = true;
@@ -139,6 +181,11 @@ else if (hasSearched && !searchFailed)
 
         isSearching = false;
         SyncAddedRawgIds();
+
+        if (!searchFailed)
+        {
+            SaveToCache();
+        }
     }
 
     private async Task LoadMoreGames()
@@ -154,6 +201,7 @@ else if (hasSearched && !searchFailed)
             hasMore = result.HasMore;
             currentPage++;
             SyncAddedRawgIds();
+            SaveToCache();
         }
         catch (Exception)
         {
@@ -174,7 +222,7 @@ else if (hasSearched && !searchFailed)
             .ToHashSet();
     }
 
-    private async Task AddToShelf(RawgGameDto rawgGame)
+    private async Task AddToShelf(RawgGameDto rawgGame, MouseEventArgs e)
     {
         var authState = await AuthProvider.GetAuthenticationStateAsync();
         var currentUserId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -199,6 +247,7 @@ else if (hasSearched && !searchFailed)
             DbContext.UserGames.Add(newUserGame);
             await DbContext.SaveChangesAsync();
             addedRawgIds.Add(rawgGame.Id);
+            await JS.InvokeVoidAsync("questLogParticles.boom", e.ClientX, e.ClientY);
         }
         catch (Exception)
         {
