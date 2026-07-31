@@ -4,9 +4,11 @@
 @using Microsoft.EntityFrameworkCore
 @using QuestLog.Data
 @using QuestLog.Models
+@using QuestLog.Services.Rawg
 @inject ApplicationDbContext DbContext
 @inject AuthenticationStateProvider AuthProvider
 @inject ToastService Toast
+@inject ExploreGamesCache ExploreCache
 
 <PageTitle>My Shelf</PageTitle>
 
@@ -141,6 +143,7 @@ else
             await DbContext.SaveChangesAsync();
             games.Remove(game);
             ApplyFilter();
+            ExploreCache.AddedRawgIds.Remove(game.RawgId);
         }
         catch (Exception)
         {
