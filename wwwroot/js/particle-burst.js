@@ -9,11 +9,11 @@ window.questLogParticles = {
 
     for (let i = 0; i < count; i++) {
       let angle = Math.random() * Math.PI * 2;
-      let distance = 150 + Math.random() * 150;
+      let distance = 50 + Math.random() * 150;
       let dx = Math.cos(angle) * distance;
       let dy = Math.sin(angle) * distance;
-      let size = 10 + Math.random() * 4;
-      let duration = 550 + Math.random() * 400; // faster than the original 1000-2700ms
+      let size = 7 + Math.random() * 4;
+      let duration = 750 + Math.random() * 400; // faster than the original 1000-2700ms
 
       let particle = document.createElement("span");
       particle.className = "ql-particle";
