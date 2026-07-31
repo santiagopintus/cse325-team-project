@@ -41,7 +41,8 @@ else
                           ImageUrl="@game.CoverArtUrl"
                           Platform="@game.Platform"
                           Score="@(game.UserRating > 0 ? $"{game.UserRating}/5" : null)"
-                          Tag="@(game.RawgId == 0 ? "Manually Added" : null)">
+                          Tag="@(game.RawgId == 0 ? "Manually Added" : null)"
+                          CssClass="game-card-shelf">
                     <UserGameStatusFields IdPrefix="@game.Id.ToString()"
                                           Status="game.Status" StatusChanged="s => UpdateStatus(game, s)"
                                           Rating="game.UserRating" RatingChanged="r => UpdateRating(game, r)"

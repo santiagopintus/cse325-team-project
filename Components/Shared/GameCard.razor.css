@@ -5,13 +5,12 @@
   flex-direction: column;
   transform: perspective(1000px);
   transform-style: preserve-3d;
+  transition: box-shadow 200ms ease-in-out;
 }
 
 .game-card:hover {
-  box-shadow: 0 4px 12px var(--color-accent); /* Green shadow */
-  box-shadow: 0 0 10px var(--color-text); /* Green shadow */
-  box-shadow: 0 0 10px var(--color-text); /* Green shadow */
-  box-shadow: 0 0 10px -3px var(--color-text); /* Green shadow */
+  box-shadow: 0 0 10px -3px
+    color-mix(in srgb, var(--color-text) 60%, transparent);
 }
 
 .game-card-image {
@@ -97,4 +96,31 @@
   flex-direction: column;
   gap: 8px;
   transform: translateZ(30px);
+  border-radius: 0.25rem;
+}
+
+.game-card-actions {
+  transition: box-shadow 0.2s ease-in-out;
+}
+.game-card:hover .game-card-actions {
+  box-shadow: 0 0 10px -3px
+    color-mix(in srgb, var(--color-accent) 60%, transparent);
+}
+.game-card .game-card-actions:hover {
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-accent) 60%, transparent);
+}
+
+.game-card:hover .game-card-actions:has(.btn-view-shelf) {
+  box-shadow: 0 0 10px -5px
+    color-mix(in srgb, var(--color-text) 60%, transparent);
+}
+.game-card .game-card-actions:has(.btn-view-shelf):hover {
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-text) 60%, transparent);
+}
+
+.game-card-shelf:hover .game-card-actions,
+.game-card-shelf .game-card-actions:hover,
+.game-card-shelf:hover .game-card-actions:has(.btn-view-shelf),
+.game-card-shelf .game-card-actions:has(.btn-view-shelf):hover {
+  box-shadow: none;
 }

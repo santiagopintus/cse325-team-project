@@ -45,6 +45,7 @@ builder.Services
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
 builder.Services.AddScoped<ToastService>();
+builder.Services.AddScoped<ExploreGamesCache>();
 
 var app = builder.Build();
 

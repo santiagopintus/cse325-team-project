@@ -1,4 +1,4 @@
-<div class="game-card" data-tilt="@(EnableTilt ? "true" : null)">
+<div class="game-card @CssClass" data-tilt="@(EnableTilt ? "true" : null)">
     <div class="game-card-image" style="@(!string.IsNullOrWhiteSpace(ImageUrl) ? $"background-image: url('{ImageUrl}')" : null)" role="img" aria-label="@($"{Title} cover art")">
         @if (!string.IsNullOrWhiteSpace(Tag))
         {
@@ -48,6 +48,9 @@
 
     [Parameter]
     public bool EnableTilt { get; set; }
+
+    [Parameter]
+    public string? CssClass { get; set; }
 
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
