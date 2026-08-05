@@ -1,7 +1,39 @@
 @* Required attribution + active link per RAWG's Terms of Use — must stay on every page that shows RAWG data. *@
+@implements IDisposable
+@inject QuestLog.Services.Rawg.RawgApiStatus ApiStatus
+
 <footer class="site-footer">
-    <p>
-        Game data and images provided by
-        <a href="https://rawg.io" target="_blank" rel="noopener noreferrer">RAWG.io</a>.
-    </p>
+    @if (!ApiStatus.IsDown)
+    {
+        <p>
+            Game data and images provided by
+            <a href="https://rawg.io" target="_blank" rel="noopener noreferrer">RAWG.io</a>.
+        </p>
+    }
+
+    <div class="api-status" title="@(ApiStatus.IsDown ? "RAWG API is unreachable — showing offline demo data" : "RAWG API is live")">
+        <span class="api-status-label">RAWG API @(ApiStatus.IsDown ? "offline" : "live")</span>
+        <span class="api-status-switch @(ApiStatus.IsDown ? "is-off" : "is-on")"
+              role="status"
+              aria-label="@(ApiStatus.IsDown ? "RAWG API offline, using demo data" : "RAWG API live")">
+            <span class="api-status-knob"></span>
+        </span>
+    </div>
 </footer>
+
+@code {
+    protected override void OnInitialized()
+    {
+        ApiStatus.Changed += HandleChanged;
+    }
+
+    private void HandleChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ApiStatus.Changed -= HandleChanged;
+    }
+}

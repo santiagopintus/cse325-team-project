@@ -43,7 +43,7 @@ else
                     <input type="checkbox" class="form-check-input" id="platform-@platform.Id"
                            name="@($"{nameof(Input)}.{nameof(Input.SelectedPlatformIds)}")"
                            value="@platform.Id"
-                           checked="@Input.SelectedPlatformIds.Contains(platform.Id)" />
+                           checked="@(Input.SelectedPlatformIds?.Contains(platform.Id) == true)" />
                     <label class="form-check-label" for="platform-@platform.Id">@platform.Name</label>
                 </div>
             }
@@ -95,7 +95,7 @@ else
             .Where(p => p.UserId == user.Id)
             .ToListAsync();
 
-        var selectedIds = Input.SelectedPlatformIds.ToHashSet();
+        var selectedIds = (Input.SelectedPlatformIds ?? new()).ToHashSet();
         var existingIds = existing.Select(p => p.PlatformId).ToHashSet();
 
         DbContext.UserPlatformPreferences.RemoveRange(existing.Where(p => !selectedIds.Contains(p.PlatformId)));

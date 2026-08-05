@@ -10,4 +10,5 @@ public class ExploreGamesCache
     public bool HasMore { get; set; }
     public int CurrentPage { get; set; } = 1;
     public bool HasSearched { get; set; }
+    public bool IsFallbackActive { get; set; }
 }

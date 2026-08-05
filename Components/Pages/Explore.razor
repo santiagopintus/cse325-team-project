@@ -15,6 +15,13 @@
 
 <h3>Explore Games</h3>
 
+@if (isFallbackActive && !searchFailed)
+{
+    <div class="explore-fallback-banner">
+        Showing offline demo data &mdash; RAWG is temporarily unreachable. Filters and "Add to Shelf" still work.
+    </div>
+}
+
 @if (!searchFailed)
 {
     <div class="explore-toolbar">
@@ -148,6 +155,7 @@ else if (hasSearched)
     private bool hasSearched;
     private bool searchFailed;
     private string? lastErrorMessage;
+    private bool isFallbackActive;
     private string? userId;
     private int currentPage = 1;
     private bool hasMore;
@@ -177,6 +185,7 @@ else if (hasSearched)
         await Task.WhenAll(LoadPreferredPlatformIdsAsync(), genresTask, platformsTask);
         allGenres = genresTask.Result;
         allPlatforms = platformsTask.Result;
+        isFallbackActive = RawgApi.LastFetchWasFallback;
 
         ParseFilterParams();
 
@@ -336,6 +345,7 @@ else if (hasSearched)
         hasMore = Cache.HasMore;
         currentPage = Cache.CurrentPage;
         hasSearched = Cache.HasSearched;
+        isFallbackActive = Cache.IsFallbackActive;
         cacheKey = Cache.Query;
     }
 
@@ -349,6 +359,7 @@ else if (hasSearched)
         Cache.HasMore = hasMore;
         Cache.CurrentPage = currentPage;
         Cache.HasSearched = hasSearched;
+        Cache.IsFallbackActive = isFallbackActive;
     }
 
     private async Task LoadDefaultGames()
@@ -377,6 +388,7 @@ else if (hasSearched)
             var result = await currentFetcher(currentPage);
             games = result.Games;
             hasMore = result.HasMore;
+            isFallbackActive = RawgApi.LastFetchWasFallback;
         }
         catch (Exception)
         {
@@ -414,6 +426,7 @@ else if (hasSearched)
             games.AddRange(result.Games);
             hasMore = result.HasMore;
             currentPage++;
+            isFallbackActive = RawgApi.LastFetchWasFallback;
             SyncAddedRawgIds();
             SaveToCache();
         }

@@ -34,6 +34,8 @@ var connectionString =
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
+builder.Services.AddSingleton<RawgReferenceDataCache>();
+builder.Services.AddSingleton<RawgApiStatus>();
 builder.Services.AddHttpClient<RawgApiService>(client => client.Timeout = TimeSpan.FromSeconds(10));
 
 builder.Services
