@@ -34,7 +34,7 @@ var connectionString =
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddHttpClient<RawgApiService>();
+builder.Services.AddHttpClient<RawgApiService>(client => client.Timeout = TimeSpan.FromSeconds(10));
 
 builder.Services
     .AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)

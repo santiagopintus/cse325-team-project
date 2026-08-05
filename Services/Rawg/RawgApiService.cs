@@ -63,15 +63,33 @@ public class RawgApiService
     public async Task<List<RawgGenreDto>> GetGenresAsync()
     {
         var url = $"https://api.rawg.io/api/genres?key={_apiKey}&page_size=40";
-        var response = await _httpClient.GetFromJsonAsync<RawgGenreListResponse>(url);
-        return response?.Results ?? new();
+
+        try
+        {
+            var response = await _httpClient.GetFromJsonAsync<RawgGenreListResponse>(url);
+            return response?.Results ?? new();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to fetch RAWG genres.");
+            return new();
+        }
     }
 
     public async Task<List<RawgPlatformDto>> GetPlatformsAsync()
     {
         var url = $"https://api.rawg.io/api/platforms?key={_apiKey}&page_size=100";
-        var response = await _httpClient.GetFromJsonAsync<RawgPlatformListResponse>(url);
-        return response?.Results ?? new();
+
+        try
+        {
+            var response = await _httpClient.GetFromJsonAsync<RawgPlatformListResponse>(url);
+            return response?.Results ?? new();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to fetch RAWG platforms.");
+            return new();
+        }
     }
 
     private static string BuildFilterQuery(List<int>? genreIds, List<int>? platformIds, int? minMetacritic)

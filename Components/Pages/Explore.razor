@@ -15,58 +15,71 @@
 
 <h3>Explore Games</h3>
 
-<div class="explore-toolbar">
-    @if (isShowingPreferredPlatforms)
-    {
-        <span class="explore-toolbar-legend">Showing games for your preferred platforms</span>
-    }
-    else
-    {
-        <span></span>
-    }
-
-    <button class="btn btn-outline-secondary btn-sm" @onclick="() => showFilterModal = true">
-        Filters@(activeFilterCount > 0 ? $" ({activeFilterCount})" : "")
-    </button>
-</div>
-
-@if (selectedGenreIds.Count > 0 || (selectedPlatformIds.Count > 0 && !isShowingPreferredPlatforms) || minMetacritic.HasValue)
+@if (!searchFailed)
 {
-    <div class="explore-filter-pills">
-        @if (selectedGenreIds.Count > 0)
+    <div class="explore-toolbar">
+        @if (isShowingPreferredPlatforms)
         {
-            <span class="filter-pill">
-                Genre: @GenreNames(selectedGenreIds)
-                <button type="button" class="filter-pill-clear" @onclick="ClearGenreFilter" aria-label="Clear genre filter">&#10005;</button>
-            </span>
+            <span class="explore-toolbar-legend">Showing games for your preferred platforms</span>
         }
-        @if (selectedPlatformIds.Count > 0 && !isShowingPreferredPlatforms)
+        else
         {
-            <span class="filter-pill">
-                Platforms: @PlatformNames(selectedPlatformIds)
-                <button type="button" class="filter-pill-clear" @onclick="ClearPlatformFilter" aria-label="Clear platform filter">&#10005;</button>
-            </span>
+            <span></span>
         }
-        @if (minMetacritic.HasValue)
-        {
-            <span class="filter-pill">
-                Metacritic: @(minMetacritic)+
-                <button type="button" class="filter-pill-clear" @onclick="ClearMetacriticFilter" aria-label="Clear metacritic filter">&#10005;</button>
-            </span>
-        }
+
+        <button class="btn btn-outline-secondary btn-sm" @onclick="() => showFilterModal = true">
+            Filters@(activeFilterCount > 0 ? $" ({activeFilterCount})" : "")
+        </button>
     </div>
+
+    @if (selectedGenreIds.Count > 0 || (selectedPlatformIds.Count > 0 && !isShowingPreferredPlatforms) || minMetacritic.HasValue)
+    {
+        <div class="explore-filter-pills">
+            @if (selectedGenreIds.Count > 0)
+            {
+                <span class="filter-pill">
+                    Genre: @GenreNames(selectedGenreIds)
+                    <button type="button" class="filter-pill-clear" @onclick="ClearGenreFilter" aria-label="Clear genre filter">&#10005;</button>
+                </span>
+            }
+            @if (selectedPlatformIds.Count > 0 && !isShowingPreferredPlatforms)
+            {
+                <span class="filter-pill">
+                    Platforms: @PlatformNames(selectedPlatformIds)
+                    <button type="button" class="filter-pill-clear" @onclick="ClearPlatformFilter" aria-label="Clear platform filter">&#10005;</button>
+                </span>
+            }
+            @if (minMetacritic.HasValue)
+            {
+                <span class="filter-pill">
+                    Metacritic: @(minMetacritic)+
+                    <button type="button" class="filter-pill-clear" @onclick="ClearMetacriticFilter" aria-label="Clear metacritic filter">&#10005;</button>
+                </span>
+            }
+        </div>
+    }
+
+    <FilterModal IsOpen="showFilterModal"
+                 IsOpenChanged="v => showFilterModal = v"
+                 SelectedGenreIds="selectedGenreIds"
+                 SelectedPlatformIds="selectedPlatformIds"
+                 MinMetacritic="minMetacritic"
+                 OnApply="ApplyFilters"
+                 AllGenres="allGenres"
+                 AllPlatforms="allPlatforms" />
 }
 
-<FilterModal IsOpen="showFilterModal"
-             IsOpenChanged="v => showFilterModal = v"
-             SelectedGenreIds="selectedGenreIds"
-             SelectedPlatformIds="selectedPlatformIds"
-             MinMetacritic="minMetacritic"
-             OnApply="ApplyFilters"
-             AllGenres="allGenres"
-             AllPlatforms="allPlatforms" />
-
-@if (isSearching)
+@if (searchFailed)
+{
+    <div class="explore-error">
+        <p class="explore-error-title">@lastErrorMessage</p>
+        <div class="explore-error-actions">
+            <button class="btn btn-primary" @onclick="RetryLoad">Retry</button>
+            <button class="btn btn-outline-secondary" @onclick='() => Nav.NavigateTo("/my-shelf")'>Go to My Shelf</button>
+        </div>
+    </div>
+}
+else if (isSearching)
 {
     <p>Searching...</p>
 }
@@ -108,9 +121,9 @@ else if (games.Count > 0)
         </div>
     }
 }
-else if (hasSearched && !searchFailed)
+else if (hasSearched)
 {
-    <p>No games found for "@searchQuery".</p>
+    <p>@(string.IsNullOrWhiteSpace(searchQuery) ? "No games found." : $"No games found for \"{searchQuery}\".")</p>
 }
 
 @code {
@@ -134,6 +147,7 @@ else if (hasSearched && !searchFailed)
     private bool isSearching;
     private bool hasSearched;
     private bool searchFailed;
+    private string? lastErrorMessage;
     private string? userId;
     private int currentPage = 1;
     private bool hasMore;
@@ -349,13 +363,13 @@ else if (hasSearched && !searchFailed)
         cacheKey = searchQuery;
         currentFetcher = BuildSearchFetcher();
         await FetchGames("Couldn't search games right now. Please try again.");
-        hasSearched = true;
     }
 
     private async Task FetchGames(string errorMessage)
     {
         isSearching = true;
         searchFailed = false;
+        hasSearched = true;
         currentPage = 1;
 
         try
@@ -369,6 +383,7 @@ else if (hasSearched && !searchFailed)
             games = new();
             hasMore = false;
             searchFailed = true;
+            lastErrorMessage = errorMessage;
             Toast.Show(errorMessage, ToastLevel.Error);
         }
 
@@ -379,6 +394,12 @@ else if (hasSearched && !searchFailed)
         {
             SaveToCache();
         }
+    }
+
+    private async Task RetryLoad()
+    {
+        if (lastErrorMessage is null) return;
+        await FetchGames(lastErrorMessage);
     }
 
     private async Task LoadMoreGames()
