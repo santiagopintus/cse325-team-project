@@ -102,10 +102,10 @@
 .game-card-actions {
   transition: box-shadow 0.2s ease-in-out;
 }
-.game-card:hover .game-card-actions {
+/* .game-card:hover .game-card-actions {
   box-shadow: 0 0 10px -3px
     color-mix(in srgb, var(--color-accent) 60%, transparent);
-}
+} */
 .game-card .game-card-actions:hover {
   box-shadow: 0 0 10px color-mix(in srgb, var(--color-accent) 60%, transparent);
 }

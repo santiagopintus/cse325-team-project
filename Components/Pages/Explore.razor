@@ -15,6 +15,57 @@
 
 <h3>Explore Games</h3>
 
+<div class="explore-toolbar">
+    @if (isShowingPreferredPlatforms)
+    {
+        <span class="explore-toolbar-legend">Showing games for your preferred platforms</span>
+    }
+    else
+    {
+        <span></span>
+    }
+
+    <button class="btn btn-outline-secondary btn-sm" @onclick="() => showFilterModal = true">
+        Filters@(activeFilterCount > 0 ? $" ({activeFilterCount})" : "")
+    </button>
+</div>
+
+@if (selectedGenreIds.Count > 0 || (selectedPlatformIds.Count > 0 && !isShowingPreferredPlatforms) || minMetacritic.HasValue)
+{
+    <div class="explore-filter-pills">
+        @if (selectedGenreIds.Count > 0)
+        {
+            <span class="filter-pill">
+                Genre: @GenreNames(selectedGenreIds)
+                <button type="button" class="filter-pill-clear" @onclick="ClearGenreFilter" aria-label="Clear genre filter">&#10005;</button>
+            </span>
+        }
+        @if (selectedPlatformIds.Count > 0 && !isShowingPreferredPlatforms)
+        {
+            <span class="filter-pill">
+                Platforms: @PlatformNames(selectedPlatformIds)
+                <button type="button" class="filter-pill-clear" @onclick="ClearPlatformFilter" aria-label="Clear platform filter">&#10005;</button>
+            </span>
+        }
+        @if (minMetacritic.HasValue)
+        {
+            <span class="filter-pill">
+                Metacritic: @(minMetacritic)+
+                <button type="button" class="filter-pill-clear" @onclick="ClearMetacriticFilter" aria-label="Clear metacritic filter">&#10005;</button>
+            </span>
+        }
+    </div>
+}
+
+<FilterModal IsOpen="showFilterModal"
+             IsOpenChanged="v => showFilterModal = v"
+             SelectedGenreIds="selectedGenreIds"
+             SelectedPlatformIds="selectedPlatformIds"
+             MinMetacritic="minMetacritic"
+             OnApply="ApplyFilters"
+             AllGenres="allGenres"
+             AllPlatforms="allPlatforms" />
+
 @if (isSearching)
 {
     <p>Searching...</p>
@@ -27,6 +78,7 @@ else if (games.Count > 0)
             <GameCard Title="@game.Name"
                       ImageUrl="@game.Background_Image"
                       Platform="@string.Join(", ", game.Platforms.Select(p => p.Platform.Name))"
+                      Score="@game.Metacritic?.ToString()"
                       EnableTilt="true">
                 <AuthorizeView>
                     <Authorized>
@@ -65,8 +117,18 @@ else if (hasSearched && !searchFailed)
     [SupplyParameterFromQuery(Name = "q")]
     public string? QueryParam { get; set; }
 
+    [SupplyParameterFromQuery(Name = "genres")]
+    public string? GenresParam { get; set; }
+
+    [SupplyParameterFromQuery(Name = "platforms")]
+    public string? PlatformsParam { get; set; }
+
+    [SupplyParameterFromQuery(Name = "metacritic")]
+    public int? MetacriticParam { get; set; }
+
     private string searchQuery = "";
     private string? lastQuery;
+    private string? lastFilterSignature;
     private List<RawgGameDto> games = new();
     private HashSet<int> addedRawgIds = new();
     private bool isSearching;
@@ -76,23 +138,49 @@ else if (hasSearched && !searchFailed)
     private int currentPage = 1;
     private bool hasMore;
     private bool isLoadingMore;
+    private bool showFilterModal;
+    private List<int> selectedGenreIds = new();
+    private List<int> selectedPlatformIds = new();
+    private int? minMetacritic;
+    private List<RawgGenreDto> allGenres = new();
+    private List<RawgPlatformDto> allPlatforms = new();
+
+    private int activeFilterCount =>
+        selectedGenreIds.Count + selectedPlatformIds.Count + (minMetacritic.HasValue ? 1 : 0);
+
+    private bool isShowingPreferredPlatforms =>
+        preferredPlatformIds.Count > 0 &&
+        selectedPlatformIds.Count == preferredPlatformIds.Count &&
+        !selectedPlatformIds.Except(preferredPlatformIds).Any();
 
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthProvider.GetAuthenticationStateAsync();
         userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
+        var genresTask = RawgApi.GetGenresAsync();
+        var platformsTask = RawgApi.GetPlatformsAsync();
+        await Task.WhenAll(LoadPreferredPlatformIdsAsync(), genresTask, platformsTask);
+        allGenres = genresTask.Result;
+        allPlatforms = platformsTask.Result;
+
+        ParseFilterParams();
+
         if (string.IsNullOrWhiteSpace(QueryParam))
         {
-            if (Cache.IsPopulated && Cache.Query == null)
+            var filterSignature = BuildFilterSignature();
+
+            if (Cache.IsPopulated && Cache.Query == null && Cache.FilterSignature == filterSignature)
             {
-                currentFetcher = page => RawgApi.GetPopularGamesAsync(page);
+                currentFetcher = BuildPopularFetcher();
                 RestoreFromCache();
             }
             else
             {
                 await LoadDefaultGames();
             }
+
+            lastFilterSignature = filterSignature;
         }
     }
 
@@ -103,21 +191,125 @@ else if (hasSearched && !searchFailed)
 
     protected override async Task OnParametersSetAsync()
     {
-        if (!string.IsNullOrWhiteSpace(QueryParam) && QueryParam != lastQuery)
-        {
-            lastQuery = QueryParam;
-            searchQuery = QueryParam;
+        ParseFilterParams();
+        var filterSignature = BuildFilterSignature();
 
-            if (Cache.IsPopulated && Cache.Query == QueryParam)
+        if (!string.IsNullOrWhiteSpace(QueryParam))
+        {
+            if (QueryParam != lastQuery || filterSignature != lastFilterSignature)
             {
-                currentFetcher = page => RawgApi.SearchGamesAsync(searchQuery, page);
+                lastQuery = QueryParam;
+                lastFilterSignature = filterSignature;
+                searchQuery = QueryParam;
+
+                if (Cache.IsPopulated && Cache.Query == QueryParam && Cache.FilterSignature == filterSignature)
+                {
+                    currentFetcher = BuildSearchFetcher();
+                    RestoreFromCache();
+                }
+                else
+                {
+                    await Search();
+                }
+            }
+        }
+        else if (filterSignature != lastFilterSignature)
+        {
+            lastQuery = null;
+            lastFilterSignature = filterSignature;
+
+            if (Cache.IsPopulated && Cache.Query == null && Cache.FilterSignature == filterSignature)
+            {
+                currentFetcher = BuildPopularFetcher();
                 RestoreFromCache();
             }
             else
             {
-                await Search();
+                await LoadDefaultGames();
             }
         }
+    }
+
+    private List<int> preferredPlatformIds = new();
+
+    private async Task LoadPreferredPlatformIdsAsync()
+    {
+        if (userId is null) return;
+
+        preferredPlatformIds = await DbContext.UserPlatformPreferences
+            .Where(p => p.UserId == userId)
+            .Select(p => p.PlatformId)
+            .ToListAsync();
+    }
+
+    private void ParseFilterParams()
+    {
+        selectedGenreIds = ParseIds(GenresParam);
+        // No "platforms" param at all means the user hasn't touched this filter yet, so default
+        // to their saved preferred platforms. An explicit empty value ("platforms=") means they
+        // deliberately cleared the filter and should see all platforms.
+        selectedPlatformIds = PlatformsParam is null ? new List<int>(preferredPlatformIds) : ParseIds(PlatformsParam);
+        minMetacritic = MetacriticParam;
+    }
+
+    private static List<int> ParseIds(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return new();
+
+        return raw.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => int.TryParse(s, out var id) ? id : (int?)null)
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .ToList();
+    }
+
+    private string BuildFilterSignature() =>
+        $"{string.Join(",", selectedGenreIds.OrderBy(x => x))}|{string.Join(",", selectedPlatformIds.OrderBy(x => x))}|{minMetacritic}";
+
+    private Func<int, Task<RawgPagedResult>> BuildPopularFetcher() =>
+        page => RawgApi.GetPopularGamesAsync(page, genreIds: selectedGenreIds, platformIds: selectedPlatformIds, minMetacritic: minMetacritic);
+
+    private Func<int, Task<RawgPagedResult>> BuildSearchFetcher() =>
+        page => RawgApi.SearchGamesAsync(searchQuery, page, genreIds: selectedGenreIds, platformIds: selectedPlatformIds, minMetacritic: minMetacritic);
+
+    private string GenreNames(IEnumerable<int> ids) =>
+        string.Join(", ", allGenres.Where(g => ids.Contains(g.Id)).Select(g => g.Name));
+
+    private string PlatformNames(IEnumerable<int> ids) =>
+        string.Join(", ", allPlatforms.Where(p => ids.Contains(p.Id)).Select(p => p.Name));
+
+    private Task ClearGenreFilter() => ApplyFilters((new List<int>(), selectedPlatformIds, minMetacritic));
+
+    private Task ClearPlatformFilter() => ApplyFilters((selectedGenreIds, new List<int>(), minMetacritic));
+
+    private Task ClearMetacriticFilter() => ApplyFilters((selectedGenreIds, selectedPlatformIds, null));
+
+    private async Task ApplyFilters((List<int> GenreIds, List<int> PlatformIds, int? MinMetacritic) result)
+    {
+        var queryParams = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            queryParams.Add($"q={Uri.EscapeDataString(searchQuery)}");
+        }
+
+        if (result.GenreIds.Count > 0)
+        {
+            queryParams.Add($"genres={string.Join(",", result.GenreIds)}");
+        }
+
+        // Always include "platforms", even when empty, so an explicit "clear" is distinguishable
+        // from "no filter chosen yet" (which falls back to the user's saved preferred platforms).
+        queryParams.Add($"platforms={string.Join(",", result.PlatformIds)}");
+
+        if (result.MinMetacritic is > 0)
+        {
+            queryParams.Add($"metacritic={result.MinMetacritic}");
+        }
+
+        var query = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
+        Nav.NavigateTo($"/{query}");
+        await Task.CompletedTask;
     }
 
     private Func<int, Task<RawgPagedResult>> currentFetcher = null!;
@@ -137,6 +329,7 @@ else if (hasSearched && !searchFailed)
     {
         Cache.IsPopulated = true;
         Cache.Query = cacheKey;
+        Cache.FilterSignature = BuildFilterSignature();
         Cache.Games = games;
         Cache.AddedRawgIds = addedRawgIds;
         Cache.HasMore = hasMore;
@@ -147,14 +340,14 @@ else if (hasSearched && !searchFailed)
     private async Task LoadDefaultGames()
     {
         cacheKey = null;
-        currentFetcher = page => RawgApi.GetPopularGamesAsync(page);
+        currentFetcher = BuildPopularFetcher();
         await FetchGames("Couldn't load games right now. Please try again.");
     }
 
     private async Task Search()
     {
         cacheKey = searchQuery;
-        currentFetcher = page => RawgApi.SearchGamesAsync(searchQuery, page);
+        currentFetcher = BuildSearchFetcher();
         await FetchGames("Couldn't search games right now. Please try again.");
         hasSearched = true;
     }

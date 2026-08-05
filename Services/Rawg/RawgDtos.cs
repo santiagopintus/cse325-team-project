@@ -17,6 +17,7 @@ public class RawgGameDto
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Background_Image { get; set; } = string.Empty;
+    public int? Metacritic { get; set; }
     public List<PlatformContainerDto> Platforms { get; set; } = new();
 }
 
@@ -27,5 +28,27 @@ public class PlatformContainerDto
 
 public class PlatformDto
 {
+    public string Name { get; set; } = string.Empty;
+}
+
+public class RawgGenreListResponse
+{
+    public List<RawgGenreDto> Results { get; set; } = new();
+}
+
+public class RawgGenreDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+
+public class RawgPlatformListResponse
+{
+    public List<RawgPlatformDto> Results { get; set; } = new();
+}
+
+public class RawgPlatformDto
+{
+    public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
 }

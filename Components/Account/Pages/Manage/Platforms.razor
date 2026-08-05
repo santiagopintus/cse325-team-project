@@ -1,0 +1,125 @@
+@page "/Account/Manage/Platforms"
+
+@using Microsoft.EntityFrameworkCore
+@using QuestLog.Data
+@using QuestLog.Models
+@using QuestLog.Services.Rawg
+
+@inject ApplicationDbContext DbContext
+@inject RawgApiService RawgApi
+@inject IdentityUserAccessor UserAccessor
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Preferred Platforms</PageTitle>
+
+<h3>Preferred Platforms</h3>
+<StatusMessage />
+
+@if (!isEditing)
+{
+    @if (savedPlatformNames.Count > 0)
+    {
+        <ul class="platform-list">
+            @foreach (var name in savedPlatformNames)
+            {
+                <li>@name</li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p>You haven't picked any preferred platforms yet.</p>
+    }
+
+    <a class="btn btn-outline-secondary btn-sm" href="Account/Manage/Platforms?edit=true">Edit</a>
+}
+else
+{
+    <EditForm Model="Input" FormName="platforms" OnValidSubmit="OnValidSubmitAsync" method="post">
+        <div class="platform-checklist">
+            @foreach (var platform in allPlatforms)
+            {
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="platform-@platform.Id"
+                           name="@($"{nameof(Input)}.{nameof(Input.SelectedPlatformIds)}")"
+                           value="@platform.Id"
+                           checked="@Input.SelectedPlatformIds.Contains(platform.Id)" />
+                    <label class="form-check-label" for="platform-@platform.Id">@platform.Name</label>
+                </div>
+            }
+        </div>
+
+        <div class="platform-actions">
+            <a class="btn btn-outline-secondary btn-sm" href="Account/Manage/Platforms">Cancel</a>
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromQuery(Name = "edit")]
+    public bool? EditParam { get; set; }
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    private ApplicationUser user = default!;
+    private List<RawgPlatformDto> allPlatforms = new();
+    private List<string> savedPlatformNames = new();
+
+    private bool isEditing => EditParam == true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        allPlatforms = await RawgApi.GetPlatformsAsync();
+
+        var saved = await DbContext.UserPlatformPreferences
+            .Where(p => p.UserId == user.Id)
+            .ToListAsync();
+
+        savedPlatformNames = saved.Select(p => p.PlatformName).OrderBy(n => n).ToList();
+
+        if (HttpContext.Request.Method == HttpMethods.Get)
+        {
+            Input.SelectedPlatformIds = saved.Select(p => p.PlatformId).ToList();
+        }
+    }
+
+    private async Task OnValidSubmitAsync()
+    {
+        var existing = await DbContext.UserPlatformPreferences
+            .Where(p => p.UserId == user.Id)
+            .ToListAsync();
+
+        var selectedIds = Input.SelectedPlatformIds.ToHashSet();
+        var existingIds = existing.Select(p => p.PlatformId).ToHashSet();
+
+        DbContext.UserPlatformPreferences.RemoveRange(existing.Where(p => !selectedIds.Contains(p.PlatformId)));
+
+        foreach (var platformId in selectedIds.Except(existingIds))
+        {
+            var platform = allPlatforms.FirstOrDefault(p => p.Id == platformId);
+            if (platform is null) continue;
+
+            DbContext.UserPlatformPreferences.Add(new UserPlatformPreference
+            {
+                UserId = user.Id,
+                PlatformId = platform.Id,
+                PlatformName = platform.Name
+            });
+        }
+
+        await DbContext.SaveChangesAsync();
+
+        RedirectManager.RedirectToWithStatus("Account/Manage/Platforms", "Your preferred platforms have been updated", HttpContext);
+    }
+
+    private sealed class InputModel
+    {
+        public List<int> SelectedPlatformIds { get; set; } = new();
+    }
+}
