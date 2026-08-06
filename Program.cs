@@ -44,7 +44,8 @@ builder.Services
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
-builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
+builder.Services.AddSingleton<IEmailSender<ApplicationUser>, SmtpEmailSender>();
 
 builder.Services.AddScoped<ToastService>();
 builder.Services.AddScoped<ExploreGamesCache>();
