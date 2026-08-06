@@ -27,7 +27,10 @@
     <div class="explore-toolbar">
         @if (isShowingPreferredPlatforms)
         {
-            <span class="explore-toolbar-legend">Showing games for your preferred platforms</span>
+            <span class="explore-toolbar-legend">
+                Showing games for your preferred platforms
+                <button type="button" class="explore-toolbar-legend-link" @onclick="ClearPlatformFilter">Show all instead</button>
+            </span>
         }
         else
         {

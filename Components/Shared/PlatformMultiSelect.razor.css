@@ -35,7 +35,12 @@
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  z-index: 10;
+  z-index: 1000;
+  /* Game cards use a 3D tilt effect (transform-style: preserve-3d) and lift their
+     action buttons with translateZ(30px). Without a translateZ of our own, this
+     menu sits at z=0 in that 3D space and renders behind those buttons -
+     invisible/unclickable - no matter how high z-index is set. */
+  transform: translateZ(60px);
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 8px;

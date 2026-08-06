@@ -1,0 +1,22 @@
+.user-notes-label {
+  margin: 0 0 2px;
+  padding: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.user-notes-display {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.user-notes-empty {
+  opacity: 0.6;
+}

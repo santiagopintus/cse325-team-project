@@ -27,10 +27,7 @@
             else
             {
                 <h4 class="game-card-title">@Title</h4>
-                @if (!string.IsNullOrWhiteSpace(Platform))
-                {
-                    <p class="game-card-platform">@Platform</p>
-                }
+                <p class="game-card-platform">@Platform</p>
             }
         </div>
         @if (ChildContent is not null)

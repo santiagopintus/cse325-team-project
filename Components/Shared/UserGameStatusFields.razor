@@ -10,17 +10,37 @@
     </select>
 </div>
 
-<div class="mb-2">
-    <label for="rating-@IdPrefix" class="form-label">Rating (1-5)</label>
-    <input id="rating-@IdPrefix" type="number" min="0" max="5" class="form-control form-control-sm"
-           value="@Rating" @onchange="HandleRatingChange" disabled="@Disabled" />
-</div>
+@if (EditMode)
+{
+    <div class="mb-2">
+        <label for="rating-@IdPrefix" class="form-label">Rating (1-5)</label>
+        <input id="rating-@IdPrefix" type="number" min="0" max="5" class="form-control form-control-sm"
+               value="@Rating" @onchange="HandleRatingChange" />
+    </div>
+}
 
-<div class="mb-2">
-    <label for="notes-@IdPrefix" class="form-label">Notes</label>
-    <textarea id="notes-@IdPrefix" class="form-control form-control-sm" rows="2"
-              value="@Notes" @onchange="HandleNotesChange" disabled="@Disabled"></textarea>
-</div>
+@if (EditMode)
+{
+    <div class="mb-2">
+        <label for="notes-@IdPrefix" class="form-label">Notes</label>
+        <textarea id="notes-@IdPrefix" class="form-control form-control-sm" rows="2"
+                  value="@Notes" @onchange="HandleNotesChange"></textarea>
+    </div>
+}
+else
+{
+    <div class="mb-2">
+        <p class="user-notes-label">Notes</p>
+        @if (!string.IsNullOrWhiteSpace(Notes))
+        {
+            <p class="user-notes-display">@Notes</p>
+        }
+        else
+        {
+            <p class="user-notes-display user-notes-empty">No notes added</p>
+        }
+    </div>
+}
 
 @code {
     [Parameter, EditorRequired]
@@ -45,7 +65,7 @@
     public EventCallback<string> NotesChanged { get; set; }
 
     [Parameter]
-    public bool Disabled { get; set; }
+    public bool EditMode { get; set; } = true;
 
     private Task HandleStatusChange(ChangeEventArgs e)
         => StatusChanged.InvokeAsync(Enum.Parse<PlayStatus>(e.Value!.ToString()!));
