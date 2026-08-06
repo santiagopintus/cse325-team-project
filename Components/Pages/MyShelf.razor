@@ -9,11 +9,13 @@
 @inject AuthenticationStateProvider AuthProvider
 @inject ToastService Toast
 @inject ExploreGamesCache ExploreCache
+@inject RawgApiService RawgApi
+@inject IJSRuntime JS
 
 <PageTitle>My Shelf</PageTitle>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="mb-0">My Shelf</h3>
+    <h1 class="mb-0">My Shelf</h1>
     <button class="btn btn-primary btn-sm" @onclick="() => showAddModal = true">+ Add a Game</button>
 </div>
 
@@ -43,14 +45,37 @@ else
                           ImageUrl="@game.CoverArtUrl"
                           Platform="@game.Platform"
                           Score="@(game.UserRating > 0 ? $"{game.UserRating}/5" : null)"
-                          Tag="@(game.RawgId == 0 ? "Manually Added" : null)"
-                          CssClass="game-card-shelf">
+                          Tag="@(IsManuallyAdded(game) ? "Manually Added" : null)"
+                          CssClass="game-card-shelf"
+                          EditMode="editingGameId == game.Id"
+                          IdPrefix="@game.Id.ToString()"
+                          TitleChanged="t => UpdateTitle(game, t)"
+                          PlatformOptions="platformOptions"
+                          SelectedPlatforms="@GetEditingPlatforms(game)"
+                          SelectedPlatformsChanged="p => UpdatePlatforms(game, p)">
                     <UserGameStatusFields IdPrefix="@game.Id.ToString()"
                                           Status="game.Status" StatusChanged="s => UpdateStatus(game, s)"
                                           Rating="game.UserRating" RatingChanged="r => UpdateRating(game, r)"
-                                          Notes="@game.Notes" NotesChanged="n => UpdateNotes(game, n)" />
+                                          Notes="@game.Notes" NotesChanged="n => UpdateNotes(game, n)"
+                                          Disabled="editingGameId != game.Id" />
 
-                    <button class="btn btn-outline-danger btn-sm" @onclick="() => Delete(game)">Remove</button>
+                    @if (editingGameId == game.Id)
+                    {
+                        <button class="btn btn-outline-secondary btn-sm" @onclick="ExitEditMode">Done Editing</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => EnterEditMode(game)">Edit</button>
+                    }
+
+                    @if (IsManuallyAdded(game))
+                    {
+                        <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteWithConfirmation(game)">Delete</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-outline-danger btn-sm" @onclick="() => Delete(game)">Remove from my shelf</button>
+                    }
                 </GameCard>
             </div>
         }
@@ -66,14 +91,55 @@ else
     private bool isLoading = true;
     private string? userId;
     private bool showAddModal = false;
+    private int? editingGameId;
+    private List<string> editingPlatforms = new();
+    private List<RawgPlatformDto> platformOptions = new();
 
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthProvider.GetAuthenticationStateAsync();
         userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
+        platformOptions = await RawgApi.GetPlatformsAsync();
         await LoadGames();
         isLoading = false;
+    }
+
+    private static bool IsManuallyAdded(UserGame game) => game.RawgId <= 0;
+
+    private List<string> GetEditingPlatforms(UserGame game) =>
+        editingGameId == game.Id ? editingPlatforms : new();
+
+    private void EnterEditMode(UserGame game)
+    {
+        editingGameId = game.Id;
+        editingPlatforms = game.Platform
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToList();
+    }
+
+    private void ExitEditMode()
+    {
+        editingGameId = null;
+        editingPlatforms = new();
+    }
+
+    private async Task UpdateTitle(UserGame game, string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return;
+        }
+
+        game.Title = value.Trim();
+        await SaveChange(game);
+    }
+
+    private async Task UpdatePlatforms(UserGame game, List<string> platforms)
+    {
+        editingPlatforms = platforms;
+        game.Platform = string.Join(", ", platforms);
+        await SaveChange(game);
     }
 
     private async Task LoadGames()
@@ -135,10 +201,26 @@ else
         }
     }
 
+    private async Task DeleteWithConfirmation(UserGame game)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", $"Delete \"{game.Title}\"? This can't be undone.");
+        if (!confirmed)
+        {
+            return;
+        }
+
+        await Delete(game);
+    }
+
     private async Task Delete(UserGame game)
     {
         try
         {
+            if (editingGameId == game.Id)
+            {
+                ExitEditMode();
+            }
+
             DbContext.UserGames.Remove(game);
             await DbContext.SaveChangesAsync();
             games.Remove(game);

@@ -91,6 +91,20 @@
   color: var(--color-text-muted);
 }
 
+.game-card-title-input {
+  margin: 0;
+  width: 100%;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 400;
+  letter-spacing: 0.3px;
+  color: var(--color-text);
+  background-color: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
 .game-card-actions {
   display: flex;
   flex-direction: column;

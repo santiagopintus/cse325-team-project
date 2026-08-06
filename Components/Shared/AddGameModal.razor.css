@@ -54,6 +54,16 @@
   max-width: 260px;
 }
 
+.add-game-preview-legend {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+
 .add-game-fields {
   display: flex;
   flex-direction: column;

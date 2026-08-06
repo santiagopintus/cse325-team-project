@@ -15,10 +15,22 @@
 
     <div class="game-card-content">
         <div class="game-card-info">
-            <h4 class="game-card-title">@Title</h4>
-            @if (!string.IsNullOrWhiteSpace(Platform))
+            @if (EditMode)
             {
-                <p class="game-card-platform">@Platform</p>
+                <input type="text" class="game-card-title-input" value="@Title"
+                       @onchange="e => TitleChanged.InvokeAsync(e.Value?.ToString() ?? string.Empty)" />
+                <PlatformMultiSelect IdPrefix="@IdPrefix"
+                                     PlatformOptions="PlatformOptions"
+                                     SelectedPlatforms="SelectedPlatforms"
+                                     SelectedPlatformsChanged="SelectedPlatformsChanged" />
+            }
+            else
+            {
+                <h4 class="game-card-title">@Title</h4>
+                @if (!string.IsNullOrWhiteSpace(Platform))
+                {
+                    <p class="game-card-platform">@Platform</p>
+                }
             }
         </div>
         @if (ChildContent is not null)
@@ -54,4 +66,22 @@
 
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public bool EditMode { get; set; }
+
+    [Parameter]
+    public string IdPrefix { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> TitleChanged { get; set; }
+
+    [Parameter]
+    public List<QuestLog.Services.Rawg.RawgPlatformDto> PlatformOptions { get; set; } = new();
+
+    [Parameter]
+    public List<string> SelectedPlatforms { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<List<string>> SelectedPlatformsChanged { get; set; }
 }

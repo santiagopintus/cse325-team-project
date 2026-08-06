@@ -1,0 +1,63 @@
+@using QuestLog.Services.Rawg
+
+<div class="platform-dropdown">
+    <button type="button" id="platform-toggle-@IdPrefix" class="platform-dropdown-toggle" @onclick="ToggleDropdown">
+        <span class="platform-dropdown-toggle-label">@Label</span>
+        <span class="platform-dropdown-toggle-caret" aria-hidden="true">@(isOpen ? "▲" : "▼")</span>
+    </button>
+    @if (isOpen)
+    {
+        <div class="platform-dropdown-menu">
+            @foreach (var platformOption in PlatformOptions)
+            {
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="platform-@IdPrefix-@platformOption.Id"
+                           checked="@SelectedPlatforms.Contains(platformOption.Name)"
+                           @onchange="e => TogglePlatform(platformOption.Name, e)" />
+                    <label class="form-check-label" for="platform-@IdPrefix-@platformOption.Id">@platformOption.Name</label>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string IdPrefix { get; set; } = string.Empty;
+
+    [Parameter]
+    public List<string> SelectedPlatforms { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<List<string>> SelectedPlatformsChanged { get; set; }
+
+    [Parameter]
+    public List<RawgPlatformDto> PlatformOptions { get; set; } = new();
+
+    private bool isOpen;
+
+    private string Label =>
+        SelectedPlatforms.Count > 0 ? string.Join(", ", SelectedPlatforms) : "Select platforms...";
+
+    private void ToggleDropdown()
+    {
+        isOpen = !isOpen;
+    }
+
+    private async Task TogglePlatform(string platformName, ChangeEventArgs e)
+    {
+        var isChecked = e.Value is bool b && b;
+        var updated = new List<string>(SelectedPlatforms);
+
+        if (isChecked && !updated.Contains(platformName))
+        {
+            updated.Add(platformName);
+        }
+        else if (!isChecked)
+        {
+            updated.Remove(platformName);
+        }
+
+        await SelectedPlatformsChanged.InvokeAsync(updated);
+    }
+}

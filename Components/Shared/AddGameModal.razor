@@ -1,9 +1,11 @@
 @using Microsoft.EntityFrameworkCore
 @using QuestLog.Data
 @using QuestLog.Models
+@using QuestLog.Services.Rawg
 @inject ApplicationDbContext DbContext
 @inject AuthenticationStateProvider AuthProvider
 @inject ToastService Toast
+@inject RawgApiService RawgApi
 @inject ILogger<AddGameModal> Logger
 
 @if (IsOpen)
@@ -17,9 +19,10 @@
 
             <div class="add-game-body">
                 <div class="add-game-preview">
+                    <span class="add-game-preview-legend">Preview</span>
                     <GameCard Title="@(string.IsNullOrWhiteSpace(title) ? "New Game" : title)"
                               ImageUrl="@imageUrl"
-                              Platform="@platform" />
+                              Platform="@SelectedPlatformsLabel" />
                 </div>
 
                 <div class="add-game-fields">
@@ -39,8 +42,11 @@
                     </div>
 
                     <div class="mb-2">
-                        <label for="new-platform" class="form-label">Platform</label>
-                        <input id="new-platform" type="text" class="form-control form-control-sm" @bind="platform" @bind:event="oninput" />
+                        <label class="form-label">Platforms</label>
+                        <PlatformMultiSelect IdPrefix="new"
+                                             PlatformOptions="platformOptions"
+                                             SelectedPlatforms="selectedPlatforms"
+                                             SelectedPlatformsChanged="p => selectedPlatforms = p" />
                     </div>
 
                     <UserGameStatusFields IdPrefix="new"
@@ -70,11 +76,20 @@
 
     private string title = string.Empty;
     private string imageUrl = string.Empty;
-    private string platform = string.Empty;
+    private List<string> selectedPlatforms = new();
     private PlayStatus status = PlayStatus.Backlog;
     private int rating = 0;
     private string notes = string.Empty;
     private bool showValidation = false;
+    private List<RawgPlatformDto> platformOptions = new();
+
+    private string SelectedPlatformsLabel =>
+        selectedPlatforms.Count > 0 ? string.Join(", ", selectedPlatforms) : "Select platforms...";
+
+    protected override async Task OnInitializedAsync()
+    {
+        platformOptions = await RawgApi.GetPlatformsAsync();
+    }
 
     private async Task Close()
     {
@@ -86,7 +101,7 @@
     {
         title = string.Empty;
         imageUrl = string.Empty;
-        platform = string.Empty;
+        selectedPlatforms = new();
         status = PlayStatus.Backlog;
         rating = 0;
         notes = string.Empty;
@@ -123,7 +138,7 @@
                 RawgId = nextManualRawgId,
                 Title = title.Trim(),
                 CoverArtUrl = imageUrl.Trim(),
-                Platform = platform.Trim(),
+                Platform = string.Join(", ", selectedPlatforms),
                 Status = status,
                 UserRating = rating,
                 Notes = notes
