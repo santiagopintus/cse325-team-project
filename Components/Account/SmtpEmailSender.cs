@@ -3,6 +3,7 @@ using MailKit.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using MimeKit;
+using QuestLog.Components.Account.Pages;
 using QuestLog.Data;
 
 namespace QuestLog.Components.Account;
@@ -22,10 +23,10 @@ internal sealed class SmtpEmailSender(IOptions<SmtpOptions> options) : IEmailSen
     private readonly SmtpOptions options = options.Value;
 
     public Task SendConfirmationLinkAsync(ApplicationUser user, string email, string confirmationLink) =>
-        SendEmailAsync(email, "Confirm your email", $"Please confirm your account by <a href='{confirmationLink}'>clicking here</a>.");
+        SendEmailAsync(email, "Confirm your email", EmailTemplates.ConfirmEmail(user, email, confirmationLink));
 
     public Task SendPasswordResetLinkAsync(ApplicationUser user, string email, string resetLink) =>
-        SendEmailAsync(email, "Reset your password", $"Please reset your password by <a href='{resetLink}'>clicking here</a>.");
+        SendEmailAsync(email, "Reset your password", EmailTemplates.PasswordReset(user, email, resetLink));
 
     public Task SendPasswordResetCodeAsync(ApplicationUser user, string email, string resetCode) =>
         SendEmailAsync(email, "Reset your password", $"Please reset your password using the following code: {resetCode}");
@@ -38,9 +39,6 @@ internal sealed class SmtpEmailSender(IOptions<SmtpOptions> options) : IEmailSen
         message.Subject = subject;
         message.Body = new BodyBuilder { HtmlBody = htmlBody }.ToMessageBody();
 
-        // DEBUG ONLY — prints the exact SMTP credentials being used at send time so
-        // copy/paste or config-key mistakes are visible. Remove before shipping to production.
-        Console.WriteLine($"[SMTP DEBUG] Host='{options.Host}' Port={options.Port} Username='{options.Username}' Password='{options.Password}' (len={options.Password.Length}) FromEmail='{options.FromEmail}'");
 
         using var client = new SmtpClient();
         await client.ConnectAsync(options.Host, options.Port, SecureSocketOptions.StartTls);
