@@ -1,4 +1,6 @@
+@using Microsoft.AspNetCore.WebUtilities
 @inject NavigationManager Nav
+@implements IDisposable
 
 <header class="navbar">
     <div class="navbar-inner container">
@@ -7,6 +9,12 @@
         <div class="navbar-search">
             <span class="navbar-search-icon" aria-hidden="true">⌕</span>
             <input class="navbar-search-input" placeholder="Search games..." aria-label="Search games" @bind="query" @bind:event="oninput" @onkeyup="HandleKeyUp" />
+            @if (hasActiveSearch)
+            {
+                <button type="button" class="navbar-search-clear" aria-label="Clear search" @onclick="ClearSearch">
+                    <span aria-hidden="true">✕</span>
+                </button>
+            }
             <button type="button" class="navbar-search-button" aria-label="Search" @onclick="Search">
                 <span aria-hidden="true">⌕</span>
             </button>
@@ -34,6 +42,26 @@
 
 @code {
     private string query = string.Empty;
+    private bool hasActiveSearch;
+
+    protected override void OnInitialized()
+    {
+        SyncFromUri(Nav.Uri);
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        SyncFromUri(e.Location);
+        StateHasChanged();
+    }
+
+    private void SyncFromUri(string uri)
+    {
+        var queryFromUri = QueryHelpers.ParseQuery(new Uri(uri).Query).TryGetValue("q", out var q) ? q.ToString() : "";
+        query = queryFromUri;
+        hasActiveSearch = !string.IsNullOrEmpty(queryFromUri);
+    }
 
     private void HandleKeyUp(KeyboardEventArgs e)
     {
@@ -49,5 +77,16 @@
         {
             Nav.NavigateTo($"/?q={Uri.EscapeDataString(query)}");
         }
+    }
+
+    private void ClearSearch()
+    {
+        query = string.Empty;
+        Nav.NavigateTo("/");
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
     }
 }

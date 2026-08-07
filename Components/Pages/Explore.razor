@@ -43,9 +43,16 @@
         </button>
     </div>
 
-    @if (selectedGenreIds.Count > 0 || (selectedPlatformIds.Count > 0 && !isShowingPreferredPlatforms) || minMetacritic.HasValue)
+    @if (!string.IsNullOrWhiteSpace(searchQuery) || selectedGenreIds.Count > 0 || (selectedPlatformIds.Count > 0 && !isShowingPreferredPlatforms) || minMetacritic.HasValue)
     {
         <div class="explore-filter-pills">
+            @if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                <span class="filter-pill">
+                    Search: "@searchQuery"
+                    <button type="button" class="filter-pill-clear" @onclick="ClearSearchQuery" aria-label="Clear search">&#10005;</button>
+                </span>
+            }
             @if (selectedGenreIds.Count > 0)
             {
                 <span class="filter-pill">
@@ -246,10 +253,11 @@ else if (hasSearched)
                 }
             }
         }
-        else if (filterSignature != lastFilterSignature)
+        else if (filterSignature != lastFilterSignature || lastQuery != null)
         {
             lastQuery = null;
             lastFilterSignature = filterSignature;
+            searchQuery = string.Empty;
 
             if (Cache.IsPopulated && Cache.Query == null && Cache.FilterSignature == filterSignature)
             {
@@ -316,6 +324,12 @@ else if (hasSearched)
     private Task ClearPlatformFilter() => ApplyFilters((selectedGenreIds, new List<int>(), minMetacritic));
 
     private Task ClearMetacriticFilter() => ApplyFilters((selectedGenreIds, selectedPlatformIds, null));
+
+    private Task ClearSearchQuery()
+    {
+        searchQuery = string.Empty;
+        return ApplyFilters((selectedGenreIds, selectedPlatformIds, minMetacritic));
+    }
 
     private async Task ApplyFilters((List<int> GenreIds, List<int> PlatformIds, int? MinMetacritic) result)
     {
