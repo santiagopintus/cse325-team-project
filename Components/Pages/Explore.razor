@@ -1,4 +1,5 @@
 @page "/"
+@attribute [StreamRendering]
 @using Microsoft.EntityFrameworkCore
 @using QuestLog.Data
 @using QuestLog.Models
@@ -91,7 +92,12 @@
 }
 else if (isSearching)
 {
-    <p>Searching...</p>
+    <div class="game-grid">
+        @for (var i = 0; i < SkeletonCardCount; i++)
+        {
+            <GameCardSkeleton />
+        }
+    </div>
 }
 else if (games.Count > 0)
 {
@@ -154,7 +160,7 @@ else if (hasSearched)
     private string? lastFilterSignature;
     private List<RawgGameDto> games = new();
     private HashSet<int> addedRawgIds = new();
-    private bool isSearching;
+    private bool isSearching = true;
     private bool hasSearched;
     private bool searchFailed;
     private string? lastErrorMessage;
@@ -169,6 +175,7 @@ else if (hasSearched)
     private int? minMetacritic;
     private List<RawgGenreDto> allGenres = new();
     private List<RawgPlatformDto> allPlatforms = new();
+    private const int SkeletonCardCount = 20;
 
     private int activeFilterCount =>
         selectedGenreIds.Count + selectedPlatformIds.Count + (minMetacritic.HasValue ? 1 : 0);

@@ -1,0 +1,7 @@
+.game-card-skeleton {
+  display: block;
+  height: 320px;
+  width: 100%;
+  border-radius: 16px;
+  pointer-events: none;
+}

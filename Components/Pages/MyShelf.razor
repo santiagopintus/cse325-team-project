@@ -1,5 +1,6 @@
 @page "/my-shelf"
 @attribute [Authorize]
+@attribute [StreamRendering]
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using QuestLog.Data
@@ -34,7 +35,12 @@
 
 @if (isLoading)
 {
-    <p>Loading your shelf...</p>
+    <div class="game-grid">
+        @for (var i = 0; i < SkeletonCardCount; i++)
+        {
+            <GameCardSkeleton />
+        }
+    </div>
 }
 else if (filteredGames.Count == 0)
 {
@@ -89,6 +95,7 @@ else
     private bool showAddModal = false;
     private bool isEditMode = false;
     private List<RawgPlatformDto> platformOptions = new();
+    private const int SkeletonCardCount = 20;
 
     protected override async Task OnInitializedAsync()
     {
